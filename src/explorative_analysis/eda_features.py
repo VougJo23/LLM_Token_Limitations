@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from src.utils.io import load_jsonl
 
 
@@ -22,25 +23,39 @@ def analyze_dataset(name, path):
 
     print("\nShape:", df.shape)
 
-    cols = [
-        "question_tokens",
-        "answer_tokens",
-        "reasoning_tokens",
-        "total_tokens_estimate",
-        "reasoning_steps"
+    numeric_cols = [
+    "question_tokens",
+    "answer_tokens",
+    "reasoning_tokens",
+    "total_tokens_estimate",
+    "reasoning_steps",
+    "num_correct_alternatives",
+    "num_incorrect_answers",
     ]
 
+    bool_cols = [
+    "has_reasoning",
+    "is_multi_sentence_question",
+    "is_boolean_answer",
+    ]
+
+    pd.set_option("display.max_columns", None)
     print("\n--- Summary Statistics ---")
-    print(df[cols].describe())
+    print(df[numeric_cols + bool_cols].describe())
 
     print("\n--- Missing Values ---")
-    print(df[cols].isnull().sum())
+    print(df[numeric_cols + bool_cols].isnull().sum())
 
-    print("\n--- Percentiles ---")
-    print(df[cols].quantile([0.5, 0.75, 0.9, 0.95, 0.99]))
+    print("\n--- Boolean Feature Distribution ---")
+    print(df[bool_cols].mean())
+    
+    print("\n--- Numeric Feature Percentiles ---")
+    
+    print(df[numeric_cols].quantile(np.linspace(0, 1, 11)))
+    print(df[numeric_cols].quantile(np.linspace(0.9, 1, 11)))
 
     print("\n--- Sample Rows ---")
-    print(df[["question_tokens", "reasoning_tokens", "reasoning_steps"]].head())
+    print(df[numeric_cols + bool_cols].head(2))
 
 
 

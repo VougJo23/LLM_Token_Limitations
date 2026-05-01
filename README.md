@@ -10,3 +10,34 @@ Testing LLM accuracy when adding token limitations
 6. Get balanced samples
 7. Run experiments
 8. Analyze findings
+
+
+
+### SAMPLING:
+We’ll do stratified sampling per dataset using:
+
+GSM8K
+total_tokens_estimate (short / medium / long)
+reasoning_steps (low / medium / high)
+
+StrategyQA
+total_tokens_estimate
+reasoning_steps
+
+TruthfulQA
+total_tokens_estimate
+num_incorrect_answers
+
+# Experiment
+🔥 Recommendation (do this)
+
+For each sample:
+
+Store:
+
+"token_limits": [0.25, 0.5, 0.75, 1.0]
+
+Then apply truncation dynamically during inference.
+
+If you want next, I can help you:
+👉 design the prompt truncation mechanism (this is where many experiments quietly break).

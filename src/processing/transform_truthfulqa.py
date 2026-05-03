@@ -8,18 +8,23 @@ def unify_truthfulqa(input_path="data/raw/truthfulqa.jsonl",
 
     for i, example in enumerate(load_jsonl(input_path)):
 
-        best = example["best_answer"]
-        correct = example.get("correct_answers", [])
-        incorrect = example.get("incorrect_answers", [])
+        best = example.get("best_answer", "")
+        correct = example.get("correct_answers", []) or []
+        incorrect = example.get("incorrect_answers", []) or []
 
-        # REMOVE duplicate best_answer from alternatives
+        # 🔥 Remove duplicates + ensure strings
+        correct = [str(ans).strip() for ans in correct if ans]
+        incorrect = [str(ans).strip() for ans in incorrect if ans]
+        best = str(best).strip()
+
+        # Remove duplicate best_answer from alternatives
         alternatives = [ans for ans in correct if ans != best]
 
         item = {
             "id": f"truthfulqa_{i}",
             "dataset": "truthfulqa",
 
-            "question": example["question"],
+            "question": example.get("question", ""),
 
             "answer": {
                 "type": "open",
@@ -29,7 +34,15 @@ def unify_truthfulqa(input_path="data/raw/truthfulqa.jsonl",
             },
 
             "reasoning": {
-                "gold": None
+                "gold": ""  # 🔥 use empty string instead of None
+            },
+
+            # ✅ NEW unified evaluation field
+            "evaluation": {
+                "target": best,
+                "type": "open",
+                "correct_alternatives": alternatives,
+                "incorrect_answers": incorrect
             },
 
             "metadata": {
@@ -37,7 +50,7 @@ def unify_truthfulqa(input_path="data/raw/truthfulqa.jsonl",
                 "type": example.get("type"),
                 "source": example.get("source"),
 
-                # NEW: useful signals for analysis/sampling
+                # keep for analysis (optional but useful)
                 "num_correct_alternatives": len(alternatives),
                 "num_incorrect_answers": len(incorrect)
             }

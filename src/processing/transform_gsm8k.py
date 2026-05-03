@@ -71,6 +71,11 @@ def unify_gsm8k(input_path="data/raw/gsm8k.jsonl",
                 "incorrect": []
             },
 
+            "evaluation": {
+                "target": final_answer,
+                "type": "numeric"
+            },
+
             "reasoning": {
                 "gold": reasoning
             },

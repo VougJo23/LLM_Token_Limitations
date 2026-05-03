@@ -29,15 +29,12 @@ total_tokens_estimate
 num_incorrect_answers
 
 # Experiment
-🔥 Recommendation (do this)
-
-For each sample:
-
-Store:
-
-"token_limits": [0.25, 0.5, 0.75, 1.0]
-
+Store "token_limits": [0.25, 0.5, 0.75, 1.0]
 Then apply truncation dynamically during inference.
 
-If you want next, I can help you:
-👉 design the prompt truncation mechanism (this is where many experiments quietly break).
+# Strategy/ Thesis Alternatives:
+Role isolation experiments
+1. Generator only: (no verification)
+2. Generator + verifier (same model)
+3. Generator + verifier (different model)
+

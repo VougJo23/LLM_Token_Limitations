@@ -123,7 +123,7 @@ def run_sampling():
     df_gsm = load_to_dataframe("data/features/gsm8k_features.jsonl")
     gsm_sample = sample_gsm8k(df_gsm)
     save_jsonl(gsm_sample.to_dict(orient="records"), "data/samples/gsm8k.jsonl")
-
+    
     # StrategyQA
     df_strat = load_to_dataframe("data/features/strategyqa_features.jsonl")
     strat_sample = sample_strategyqa(df_strat)

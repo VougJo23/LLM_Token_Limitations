@@ -1,5 +1,3 @@
-# src/experiments/run_gsm8k_pilot.py
-
 from src.utils.io import load_jsonl, save_jsonl
 from src.prompts.gsm8k import gsm8k_prompt
 from src.parsers.gsm8k import parse_gsm8k
@@ -19,7 +17,8 @@ def run_pilot(
     for item in data:
         prompt = gsm8k_prompt(item)
 
-        model_output = run_model(prompt)
+        response = run_model(prompt=prompt, max_tokens=64)
+        model_output = response["text"]
         parsed_answer = parse_gsm8k(model_output)
 
         gold = item["answer"]["ideal"]
@@ -31,6 +30,9 @@ def run_pilot(
             "predicted": parsed_answer,
             "raw_output": model_output,
             "correct": parsed_answer == gold,
+            "prompt_tokens": response.get("prompt_tokens"),
+            "completion_tokens": response.get("completion_tokens"),
+            "total_tokens": response.get("total_tokens"),
             "question_tokens": item["question_tokens"],
             "reasoning_tokens": item["reasoning_tokens"],
             "total_tokens_estimate": item["total_tokens_estimate"],

@@ -1,0 +1,21 @@
+{
+  "dataset": "gsm8k",
+  "pilot_config": "pilot_default",
+  "gen_config": "gen_medium",
+  "model": "gpt-4o-mini",
+  "temperature": 0.0,
+  "n_total": 5,
+  "n_valid": 5,
+  "generator_accuracy": 0.0,
+  "verifier_accuracy": 0.6,
+  "lazy_accept_rate": 0.4,
+  "abstain_rate": 0.0,
+  "budget": {
+    "total_max_tokens": 160,
+    "generator_ratio": 0.25,
+    "generator_max_tokens": 40,
+    "verifier_max_tokens": 120,
+    "generator_reasoning_budget": 32
+  },
+  "output": "data/experiments/pilot/gsm8k_pilot_default_gen_medium_r25.jsonl"
+}

@@ -1,0 +1,66 @@
+[
+  {
+    "path": "data\\experiments\\pilot\\gsm8k_pilot_default_gen_medium_r25.jsonl",
+    "n": 30,
+    "trunc_rate": 1.0,
+    "has_answer_rate": 0.0,
+    "complete_rate": 0.0,
+    "generator_accuracy": 0.0,
+    "verifier_decisions": {
+      "CORRECT": 1,
+      "INCORRECT": 29,
+      "ABSTAIN": 0
+    },
+    "verifier_outputs_both_labels": true,
+    "false_positive_rate": 0.03333333333333333,
+    "false_negative_rate": null
+  },
+  {
+    "path": "data\\experiments\\pilot\\gsm8k_pilot_default_gen_medium_r50.jsonl",
+    "n": 30,
+    "trunc_rate": 1.0,
+    "has_answer_rate": 0.0,
+    "complete_rate": 0.0,
+    "generator_accuracy": 0.0,
+    "verifier_decisions": {
+      "CORRECT": 8,
+      "INCORRECT": 22,
+      "ABSTAIN": 0
+    },
+    "verifier_outputs_both_labels": true,
+    "false_positive_rate": 0.26666666666666666,
+    "false_negative_rate": null
+  },
+  {
+    "path": "data\\experiments\\pilot\\gsm8k_pilot_default_gen_medium_r75.jsonl",
+    "n": 30,
+    "trunc_rate": 0.5666666666666667,
+    "has_answer_rate": 0.43333333333333335,
+    "complete_rate": 0.43333333333333335,
+    "generator_accuracy": 0.43333333333333335,
+    "verifier_decisions": {
+      "CORRECT": 12,
+      "INCORRECT": 18,
+      "ABSTAIN": 0
+    },
+    "verifier_outputs_both_labels": true,
+    "false_positive_rate": 0.058823529411764705,
+    "false_negative_rate": 0.15384615384615385
+  },
+  {
+    "path": "data\\experiments\\pilot\\gsm8k_pilot_default_gen_medium_r90.jsonl",
+    "n": 30,
+    "trunc_rate": 0.3333333333333333,
+    "has_answer_rate": 0.6666666666666666,
+    "complete_rate": 0.6666666666666666,
+    "generator_accuracy": 0.6333333333333333,
+    "verifier_decisions": {
+      "CORRECT": 14,
+      "INCORRECT": 16,
+      "ABSTAIN": 0
+    },
+    "verifier_outputs_both_labels": true,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.2631578947368421
+  }
+]

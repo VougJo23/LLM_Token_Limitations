@@ -30,8 +30,7 @@ def gsm8k_generator_prompt(
 
     return f"""
             You are solving a math problem under a strict token budget.
-
-            You may use AT MOST {reasoning_budget} tokens for reasoning.
+            You may use AT MOST {reasoning_budget - 10} tokens for reasoning.
 
             Rules:
             - Keep reasoning concise.
@@ -40,12 +39,10 @@ def gsm8k_generator_prompt(
             IMPORTANT:
             - You may reason freely.
             - You MUST end your response exactly like this:
-            Answer: <final number>
 
             Question:
             {example["question"]}
-
-            Format:
             Reasoning: short reasoning here
             Answer: final_number
             """
+# or Candidate Answer:

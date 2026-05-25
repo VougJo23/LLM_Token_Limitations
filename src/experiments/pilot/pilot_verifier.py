@@ -72,6 +72,7 @@ def run_pilot_verifier(
                 model=model,
                 temperature=temperature,
                 max_tokens=generator_max_tokens,
+                logprobs=True,
             )
 
             generator_raw_output = gen_resp["text"]
@@ -93,6 +94,7 @@ def run_pilot_verifier(
                 model=model,
                 temperature=temperature,
                 max_tokens=verifier_max_tokens,
+                logprobs=True,
             )
 
             verifier_raw_output = ver_resp["text"]
@@ -120,12 +122,14 @@ def run_pilot_verifier(
                 "prompt_tokens": gen_resp.get("prompt_tokens"),
                 "completion_tokens": gen_resp.get("completion_tokens"),
                 "total_tokens_used": gen_resp.get("total_tokens"),
+                "generator_completion_avg_logprob": gen_resp.get("completion_avg_logprob"),
                 "generator_max_tokens": generator_max_tokens,
                 "generator_reasoning_budget": generator_reasoning_budget,
 
                 "verifier_prompt_tokens": ver_resp.get("prompt_tokens"),
                 "verifier_completion_tokens": ver_resp.get("completion_tokens"),
                 "verifier_total_tokens_used": ver_resp.get("total_tokens"),
+                "verifier_completion_avg_logprob": ver_resp.get("completion_avg_logprob"),
                 "verifier_max_tokens": verifier_max_tokens,
 
                 "generator_reasoning": generator_reasoning,
@@ -149,6 +153,9 @@ def run_pilot_verifier(
                         "prompt_tokens": gen_resp.get("prompt_tokens"),
                         "completion_tokens": gen_resp.get("completion_tokens"),
                         "total_tokens": gen_resp.get("total_tokens"),
+                        "completion_avg_logprob": gen_resp.get("completion_avg_logprob"),
+                        "completion_logprob_sum": gen_resp.get("completion_logprob_sum"),
+                        "completion_logprob_count": gen_resp.get("completion_logprob_count"),
                         "model": gen_resp.get("model"),
                         "finish_reason": gen_finish_reason,
                         "response_id": gen_resp.get("response_id"),
@@ -157,6 +164,9 @@ def run_pilot_verifier(
                         "prompt_tokens": ver_resp.get("prompt_tokens"),
                         "completion_tokens": ver_resp.get("completion_tokens"),
                         "total_tokens": ver_resp.get("total_tokens"),
+                        "completion_avg_logprob": ver_resp.get("completion_avg_logprob"),
+                        "completion_logprob_sum": ver_resp.get("completion_logprob_sum"),
+                        "completion_logprob_count": ver_resp.get("completion_logprob_count"),
                         "model": ver_resp.get("model"),
                         "finish_reason": ver_finish_reason,
                         "response_id": ver_resp.get("response_id"),

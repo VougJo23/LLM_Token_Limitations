@@ -1,0 +1,40 @@
+{
+  "truncation_frequency_vs_generator_budget": [
+    {
+      "generator_max_tokens": 40,
+      "n": 90,
+      "n_truncated": 90,
+      "truncation_rate": 1.0
+    },
+    {
+      "generator_max_tokens": 80,
+      "n": 90,
+      "n_truncated": 89,
+      "truncation_rate": 0.9888888888888889
+    },
+    {
+      "generator_max_tokens": 120,
+      "n": 90,
+      "n_truncated": 51,
+      "truncation_rate": 0.5666666666666667
+    },
+    {
+      "generator_max_tokens": 144,
+      "n": 90,
+      "n_truncated": 34,
+      "truncation_rate": 0.37777777777777777
+    }
+  ],
+  "truncation_vs_correctness": {
+    "counts": {
+      "truncated=True|correct=False": 263,
+      "truncated=False|correct=True": 91,
+      "truncated=False|correct=False": 5,
+      "truncated=True|correct=True": 1
+    },
+    "p_correct_given_truncated": 0.003787878787878788,
+    "p_correct_given_not_truncated": 0.9479166666666666,
+    "n_truncated_rows": 264,
+    "n_not_truncated_rows": 96
+  }
+}

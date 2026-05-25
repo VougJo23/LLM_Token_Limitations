@@ -1,0 +1,36 @@
+{
+  "dataset": "gsm8k",
+  "pilot_config": "pilot_default",
+  "gen_config": "gen_light",
+  "model": "gpt-4o-mini",
+  "temperature": 0.0,
+  "n_total": 30,
+  "n_valid": 30,
+  "generator_accuracy": 0.0,
+  "verifier_accuracy": 1.0,
+  "lazy_accept_rate": 0.0,
+  "abstain_rate": 0.0,
+  "false_positive_rate": 0.0,
+  "false_negative_rate": 0.0,
+  "system_level_accuracy": 1.0,
+  "effective_acceptance_rate": 1.0,
+  "budget": {
+    "total_max_tokens": 160,
+    "generator_ratio": 0.25,
+    "generator_max_tokens": 40,
+    "verifier_max_tokens": 120,
+    "generator_reasoning_budget": 30
+  },
+  "output": "data\\experiments\\pilot\\sweep_90_75_50_25\\gsm8k_pilot_default_gen_light_r25.jsonl",
+  "trunc_rate": 1.0,
+  "has_answer_rate": 0.0,
+  "complete_rate": 0.0,
+  "verifier_decisions": {
+    "CORRECT": 0,
+    "INCORRECT": 30,
+    "ABSTAIN": 0
+  },
+  "verifier_outputs_both_labels": false,
+  "generator_truncation_rate": 1.0,
+  "verifier_truncation_rate": 0.0
+}

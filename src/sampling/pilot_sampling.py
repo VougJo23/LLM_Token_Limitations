@@ -11,7 +11,7 @@ def load_to_dataframe(path):
     return df
 
 
-def select_diverse_samples(df, n=5):
+def select_diverse_samples(df, n=30):
 
     df = df.copy()
 
@@ -47,7 +47,7 @@ def select_diverse_samples(df, n=5):
 
 
 
-def pilot_gsm8k(input_path, output_path, n=5):
+def pilot_gsm8k(input_path, output_path, n=30):
     df = load_to_dataframe(input_path)
     pilot = select_diverse_samples(df, n=n)
     save_jsonl(pilot.to_dict(orient="records"), output_path)
@@ -95,7 +95,7 @@ def run_pilot_sampling():
     pilot_gsm8k(
         "data/samples/gsm8k.jsonl",
         "data/pilot/gsm8k_pilot.jsonl",
-        n=5
+        n=100
     )
 
     pilot_strategyqa(

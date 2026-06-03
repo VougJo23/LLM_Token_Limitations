@@ -82,8 +82,10 @@ def unify_gsm8k(input_path="data/raw/gsm8k.jsonl",
 
             "metadata": {
                 "split": example.get("split"),
-                "raw_answer": raw_answer  # keep original (important)
-            }
+                "raw_answer": raw_answer,
+            },
+            
+            "solved_percentage": example.get("solved_percentage"),
         }
 
         transformed.append(item)

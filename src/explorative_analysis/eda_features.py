@@ -1,11 +1,15 @@
 import pandas as pd
 import numpy as np
 from src.utils.io import load_jsonl
+import matplotlib.pyplot as plt
+
 
 
 def load_dataset(path):
     data = list(load_jsonl(path))
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+
+    return df
 
 def expand_features(df):
     features_df = pd.json_normalize(df["features"])
@@ -56,6 +60,7 @@ def analyze_dataset(name, path):
 
     print("\n--- Sample Rows ---")
     print(df[numeric_cols + bool_cols].head(2))
+    
 
 
 
@@ -66,12 +71,41 @@ if __name__ == "__main__":
         "data/features/gsm8k_features.jsonl"
     )
 
-    analyze_dataset(
-        "TruthfulQA",
-        "data/features/truthfulqa_features.jsonl"
-    )
+    # analyze_dataset(
+    #     "TruthfulQA",
+    #     "data/features/truthfulqa_features.jsonl"
+    # )
 
-    analyze_dataset(
-        "StrategyQA",
-        "data/features/strategyqa_features.jsonl"
-    )
+    # analyze_dataset(
+    #     "StrategyQA",
+    #     "data/features/strategyqa_features.jsonl"
+    # )
+
+    
+
+    # load dataset
+    df = pd.DataFrame(list(load_jsonl("data/processed/gsm8k_transformed.jsonl")))
+
+    # ensure numeric
+    df["solved_percentage"] = df["solved_percentage"].astype(float)
+
+    # sort values
+    df = df.sort_values("solved_percentage")
+
+    # compute CDF
+    x = df["solved_percentage"].values
+    y = np.arange(1, len(df) + 1) / len(df) * 100
+
+    # plot
+    plt.figure(figsize=(8, 5))
+    plt.plot(x, y, linewidth=2)
+
+    plt.xlabel("Solved percentage")
+    plt.ylabel("Cumulative % of dataset")
+    plt.title("Cumulative Distribution of Solved Percentage")
+    plt.grid(True, alpha=0.3)
+
+    plt.ylim(0, 100)
+
+    plt.show()
+    plt.savefig("data/analysis/solved_percentage_distribution.png")

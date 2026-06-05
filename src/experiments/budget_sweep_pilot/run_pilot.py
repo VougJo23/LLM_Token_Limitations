@@ -3,18 +3,33 @@ import argparse
 import asyncio
 import json
 import math
+import re
 import time
 from pathlib import Path
 
 from src.models.openai_runner import run_model_async
 from src.parsers.verifier import parse_verifier
 from src.prompts.verifier import build_verifier_prompt
-from src.registry.configs import CONFIGS, PILOT_CONFIGS
+from src.registry.configs import CONFIGS
 from src.registry.datasets import DATASET_PATHS
 from src.registry.evaluators import EVALUATOR_REGISTRY
 from src.registry.parsers import GENERATION_PARSER_REGISTRY
 from src.registry.prompts import GENERATOR_PROMPT_REGISTRY
 from src.utils.io import load_jsonl, save_jsonl
+
+_STEP_RE = re.compile(r"^\s*(\d+)\s*\.\s*(VALID|INVALID)\s*$", re.IGNORECASE)
+
+def parse_step_judgments(output: str) -> dict:
+    judgments = []
+    for line in (output or "").splitlines():
+        m = _STEP_RE.match(line)
+        if m:
+            judgments.append({"step_idx": int(m.group(1)) - 1, "judgment": m.group(2).upper()})
+    if not judgments:
+        return {"step_judgments": [], "total_steps": 0, "n_valid": 0, "n_invalid": 0, "first_invalid_idx": None}
+    n_inv = sum(1 for j in judgments if j["judgment"] == "INVALID")
+    first_inv = next((j["step_idx"] + 1 for j in judgments if j["judgment"] == "INVALID"), None)
+    return {"step_judgments": judgments, "total_steps": len(judgments), "n_valid": len(judgments) - n_inv, "n_invalid": n_inv, "first_invalid_idx": first_inv}
 
 
 def to_float(x):
@@ -27,7 +42,7 @@ def to_float(x):
         return None
 
 def mean(xs):
-    return sum(xs) / len(xs) if xs else 0.0
+    return sum(xs) / len(xs) if xs else None
 
 def p95(xs):
     return sorted(xs)[int(0.95 * (len(xs) - 1))] if xs else 0.0
@@ -35,14 +50,26 @@ def p95(xs):
 def auroc(scores, labels):
     if len(scores) < 2 or len(set(labels)) < 2:
         return None
-    pairs = sorted(zip(scores, labels), key=lambda p: -p[0])
-    n_pos = sum(labels)
-    n_neg = len(labels) - n_pos
+
+    data = list(zip(scores, labels))
+    data.sort(key=lambda x: x[0], reverse=True)
+
+    pos = [s for s, y in data if y == 1]
+    neg = [s for s, y in data if y == 0]
+
+    n_pos, n_neg = len(pos), len(neg)
     if n_pos == 0 or n_neg == 0:
         return None
-    rank_sum = sum(i + 1 for i, (_, l) in enumerate(pairs) if l == 1)
-    u = rank_sum - n_pos * (n_pos + 1) / 2
-    return u / (n_pos * n_neg)
+
+    count = 0
+    for p in pos:
+        for n in neg:
+            if p > n:
+                count += 1
+            elif p == n:
+                count += 0.5
+
+    return count / (n_pos * n_neg)
 
 def save_json(data, path):
     p = Path(path)
@@ -53,18 +80,14 @@ def load_existing(path):
     return {str(row["id"]): row for row in load_jsonl(path)}
 
 
-
 def get_item_budget(difficulty: str, generator_ratio: float) -> dict:
-
     cfg = CONFIGS.get(difficulty, CONFIGS["medium"])
     total = cfg["total_max_tokens"]
-    ver_min = cfg["verifier_min_tokens"]
     scale = cfg.get("generator_reasoning_budget_scale", 0.8)
 
+    # Allocate strict proportions based on the sweep ratio
     gen = max(1, int(total * generator_ratio))
-    ver = max(ver_min, total - gen)
-    if gen + ver > total:
-        gen = max(1, total - ver)
+    ver = max(1, total - gen)
 
     return {
         "difficulty": difficulty,
@@ -72,14 +95,12 @@ def get_item_budget(difficulty: str, generator_ratio: float) -> dict:
         "generator_ratio": float(generator_ratio),
         "generator_max_tokens": gen,
         "verifier_max_tokens": ver,
-        "verifier_min_tokens": ver_min,
         "generator_reasoning_budget": int(gen * scale),
         "reasoning_budget_scale": scale,
     }
 
 
 def _calibration_summary(probs, labels, n_bins=10):
-    # ECE + Brier score
     if not probs or len(probs) != len(labels):
         return {"n": 0, "brier": 0.0, "ece": 0.0}
     n = len(probs)
@@ -157,7 +178,6 @@ def compute_confidence_and_calibration(rows):
         if valp is not None and y is not None:
             ver_avg_ly.append(y); ver_avg_lp.append(valp)
 
-    # Basic confidence aggregates
     ver_conf = {
         "mean_p_correct": mean(ver_pc),
         "mean_p_chosen": mean(ver_pch),
@@ -166,20 +186,16 @@ def compute_confidence_and_calibration(rows):
     gen_conf = {"mean_token_prob_proxy": mean(gen_pp)}
     ver_avg_conf = {"mean_avg_logprob": mean(ver_avg_lp)}
 
-    # Confidence–accuracy linkage (gap)
     ver_linkage = _confidence_linkage(ver_pc, ver_yc) if ver_pc else {"gap": None}
     gen_linkage = _confidence_linkage(gen_pp, gen_yc) if gen_pp else {"gap": None}
     ver_avg_linkage = _confidence_linkage(ver_avg_lp, ver_avg_ly) if ver_avg_lp else {"gap": None}
 
-    # AUROC
     ver_auroc_val = auroc(ver_pc, ver_yc) if ver_pc else None
     gen_auroc_val = auroc(gen_pp, gen_yc) if gen_pp else None
     ver_avg_auroc_val = auroc(ver_avg_lp, ver_avg_ly) if ver_avg_lp else None
 
-    # Distribution sanity check
     ver_dist = _confidence_distribution(ver_pc)
 
-    # Calibration-by-split
     cal_by_split = {}
     if ver_pc:
         corr = [p for p, y in zip(ver_pc, ver_yc) if y == 1]
@@ -250,7 +266,6 @@ def compute_verdict_probability_metrics(token_logprobs, chosen_verdict=None):
         except (KeyError, TypeError, ValueError):
             pass
 
-    # Prefer full computation when both labels in top_logprobs
     if "CORRECT" in lp and "INCORRECT" in lp:
         p_c, p_i = math.exp(lp["CORRECT"]), math.exp(lp["INCORRECT"])
         total = p_c + p_i
@@ -285,7 +300,6 @@ def compute_verdict_probability_metrics(token_logprobs, chosen_verdict=None):
                 "verifier_verdict_margin_prob_chosen_minus_other": margin_p,
             }
 
-    # Fallback: use actual token logprob as confidence proxy
     if actual_lp is not None:
         p_correct = math.exp(actual_lp)
         certainty = p_correct
@@ -305,7 +319,7 @@ def compute_verdict_probability_metrics(token_logprobs, chosen_verdict=None):
 
 def build_result_row(
     item, gen_resp, ver_resp, gen_reasoning, predicted,
-    actual_correctness, ver_decision, dataset, pilot_config_name, model, budget,
+    actual_correctness, ver_decision, dataset, model, budget,
 ):
     gen_finish = gen_resp.get("finish_reason")
     ver_finish = ver_resp.get("finish_reason")
@@ -314,8 +328,9 @@ def build_result_row(
         ver_resp.get("token_logprobs"), chosen_verdict=chosen_verdict
     )
     verifier_correct = ver_decision is not None and ver_decision == actual_correctness
+    step_info = parse_step_judgments(ver_resp.get("text", ""))
     return {
-        "id": item.get("id"), "dataset": dataset, "pilot_config": pilot_config_name, "model": model,
+        "id": item.get("id"), "dataset": dataset, "model": model,
         "gold": item.get("answer", {}).get("ideal"),
         "predicted_answer": predicted,
         "actual_correctness": actual_correctness, "generator_correct": actual_correctness,
@@ -335,12 +350,16 @@ def build_result_row(
         "verifier_prompt_tokens": ver_resp.get("prompt_tokens"),
         "verifier_completion_tokens": ver_resp.get("completion_tokens"),
         "verifier_total_tokens_used": ver_resp.get("total_tokens"),
-        "verifier_completion_avg_logprob": ver_resp.get("completion_avg_logprob"),
         "verifier_decision": ver_decision, "verifier_correct": verifier_correct,
         "verifier_lazy_accept": ver_decision is True and not actual_correctness,
         "verifier_false_reject": ver_decision is False and actual_correctness,
         "verifier_abstained": ver_decision is None,
         **verdict_probs,
+        "step_judgments": step_info["step_judgments"],
+        "total_steps": step_info["total_steps"],
+        "n_valid_steps": step_info["n_valid"],
+        "n_invalid_steps": step_info["n_invalid"],
+        "first_invalid_step": step_info["first_invalid_idx"],
         "budget": budget,
         "usage": {
             "generator": {
@@ -369,9 +388,7 @@ def build_result_row(
     }
 
 
-
 def _per_difficulty_stats(valid: list[dict]) -> dict:
-
     groups: dict[str, list] = {}
     for r in valid:
         d = r.get("budget", {}).get("difficulty", "unknown")
@@ -381,12 +398,36 @@ def _per_difficulty_stats(valid: list[dict]) -> dict:
     for diff, rows in groups.items():
         n = len(rows)
         gen_acc = sum(1 for r in rows if r.get("actual_correctness")) / n if n else 0.0
-        decided = [r for r in rows if r.get("verifier_decision") is not None]
-        nd = len(decided)
-        correct_accepts = sum(1 for r in decided if r.get("actual_correctness") is True  and r.get("verifier_decision") is True)
-        correct_rejects = sum(1 for r in decided if r.get("actual_correctness") is False and r.get("verifier_decision") is False)
-        sys_acc = (correct_accepts + correct_rejects) / nd if nd else 0.0
+        
+        correct_system = 0
+        for r in rows:
+            v_dec = r.get("verifier_decision")
+            act_corr = r.get("actual_correctness")
+            if v_dec is True and act_corr is True:
+                correct_system += 1
+            elif v_dec is False and act_corr is False:
+                correct_system += 1
+            elif v_dec is None:
+                if act_corr is True:
+                    correct_system += 1
+
+        sys_acc = correct_system / n if n else 0.0
         gen_tokens = [r.get("completion_tokens") or 0 for r in rows]
+        step_rows = [r for r in rows if r.get("total_steps", 0) > 0]
+        tp = sum(r["n_invalid_steps"] for r in step_rows if not r.get("actual_correctness"))
+        fn = sum(r["n_valid_steps"] for r in step_rows if not r.get("actual_correctness"))
+        fp = sum(r["n_invalid_steps"] for r in step_rows if r.get("actual_correctness"))
+        tn = sum(r["n_valid_steps"] for r in step_rows if r.get("actual_correctness"))
+        total_steps = tp + fn + fp + tn
+        step_acc = (tp + tn) / total_steps if total_steps else None
+        step_recall = tp / (tp + fn) if (tp + fn) else None
+        step_fp_rate = fp / (fp + tn) if (fp + tn) else None
+        consistency = sum(
+            1 for r in step_rows
+            if (r.get("verifier_decision") is True and r["n_invalid_steps"] == 0)
+            or (r.get("verifier_decision") is False and r["n_invalid_steps"] > 0)
+        )
+        first_errors = [r["first_invalid_step"] for r in step_rows if r["first_invalid_step"] is not None]
         out[diff] = {
             "n": n,
             "generator_accuracy": gen_acc,
@@ -394,6 +435,12 @@ def _per_difficulty_stats(valid: list[dict]) -> dict:
             "accuracy_delta": sys_acc - gen_acc,
             "generator_truncation_rate": sum(1 for r in rows if r.get("truncated")) / n if n else 0.0,
             "avg_generator_tokens_used": mean(gen_tokens),
+            "step_accuracy": step_acc,
+            "step_recall": step_recall,
+            "step_fp_rate": step_fp_rate,
+            "consistency_rate": consistency / len(step_rows) if step_rows else None,
+            "avg_invalid_steps": mean([r["n_invalid_steps"] for r in step_rows]) if step_rows else None,
+            "error_position": mean(first_errors) if first_errors else None,
         }
     return out
 
@@ -425,7 +472,28 @@ def _compute_decision_simulation(valid):
     return {"accept_top_k_percent": result}
 
 
-def compute_summary(results, dataset, pilot_config_name, model, temperature, generator_ratio):
+def fnr_by_step_count(valid):
+    decided = [r for r in valid if r.get("verifier_decision") is not None and r.get("total_steps", 0) > 0]
+    if not decided:
+        return {}
+    bins = {"1-3": [], "4-6": [], "7+": []}
+    for r in decided:
+        s = r["total_steps"]
+        key = "7+" if s >= 7 else "4-6" if s >= 4 else "1-3"
+        bins[key].append(r)
+    result = {}
+    for label, group in bins.items():
+        if not group:
+            result[label] = {"n": 0, "fnr": None}
+            continue
+        fr = sum(1 for r in group if r.get("verifier_decision") is False and r.get("actual_correctness"))
+        ca = sum(1 for r in group if r.get("verifier_decision") is True and r.get("actual_correctness"))
+        denom = fr + ca
+        result[label] = {"n": len(group), "fnr": fr / denom if denom else None}
+    return result
+
+
+def compute_summary(results, dataset, model, temperature, generator_ratio):
     valid = [r for r in results if "error" not in r]
     n = len(valid)
 
@@ -439,11 +507,22 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
     fnr_denom = false_rejects + correct_accepts 
 
     gen_accuracy = sum(1 for r in valid if r.get("actual_correctness")) / n if n else 0.0
-    sys_accuracy = (correct_accepts + correct_rejects) / nd if nd else 0.0
+    
+    correct_system_total = 0
+    for r in valid:
+        v_dec = r.get("verifier_decision")
+        act_corr = r.get("actual_correctness")
+        if v_dec is True and act_corr is True:
+            correct_system_total += 1
+        elif v_dec is False and act_corr is False:
+            correct_system_total += 1
+        elif v_dec is None and act_corr is True:
+            correct_system_total += 1
+            
+    sys_accuracy = correct_system_total / n if n else 0.0
 
     difficulty = _per_difficulty_stats(valid)
 
-    # token utilization -> varying difficulty budgets
     gen_tokens_used = [r.get("completion_tokens") or 0 for r in valid]
     ver_tokens_used = [r.get("verifier_completion_tokens") or 0 for r in valid]
     gen_utils = [
@@ -465,18 +544,31 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
 
     conf = compute_confidence_and_calibration(valid)
 
+    step_rows = [r for r in valid if r.get("total_steps", 0) > 0]
+    tp = sum(r["n_invalid_steps"] for r in step_rows if not r.get("actual_correctness"))
+    fn = sum(r["n_valid_steps"] for r in step_rows if not r.get("actual_correctness"))
+    fp = sum(r["n_invalid_steps"] for r in step_rows if r.get("actual_correctness"))
+    tn = sum(r["n_valid_steps"] for r in step_rows if r.get("actual_correctness"))
+    total_judged = tp + fn + fp + tn
+    step_acc = (tp + tn) / total_judged if total_judged else None
+    step_recall = tp / (tp + fn) if (tp + fn) else None
+    step_fp_rate = fp / (fp + tn) if (fp + tn) else None
+    consistency = sum(
+        1 for r in step_rows
+        if (r.get("verifier_decision") is True and r["n_invalid_steps"] == 0)
+        or (r.get("verifier_decision") is False and r["n_invalid_steps"] > 0)
+    )
+    first_errors = [r["first_invalid_step"] for r in step_rows if r["first_invalid_step"] is not None]
     return {
         "meta": {
             "dataset": dataset,
             "model": model,
             "n_valid": n,
         },
-
         "budget": {
             "generator_ratio": float(generator_ratio),
             "per_difficulty": per_diff_budget,
         },
-
         "performance": {
             "overall": {
                 "generator_accuracy": gen_accuracy,
@@ -485,7 +577,6 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
             },
             "by_difficulty": difficulty,
         },
-
         "verification": {
             "summary": {
                 "verifier_accuracy": sum(1 for r in valid if r.get("verifier_correct") is True) / n if n else 0.0,
@@ -495,8 +586,16 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
                 "false_positive_rate": lazy_accepts / fpr_denom if fpr_denom else 0.0,
                 "false_negative_rate": false_rejects / fnr_denom if fnr_denom else 0.0,
             },
+            "step_level": {
+                "step_accuracy": step_acc,
+                "step_recall": step_recall,
+                "step_fp_rate": step_fp_rate,
+                "consistency_rate": consistency / len(step_rows) if step_rows else None,
+                "avg_invalid_steps": mean([r["n_invalid_steps"] for r in step_rows]) if step_rows else None,
+                "error_position": mean(first_errors) if first_errors else None,
+            },
+            "fnr_by_step_count": fnr_by_step_count(valid),
         },
-
         "token_usage": {
             "generator": {
                 "mean_used": mean(gen_tokens_used),
@@ -507,13 +606,11 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
                 "utilization": mean(ver_utils),
             },
         },
-
         "truncation": {
             "generator_truncation_rate": sum(1 for r in valid if r.get("truncated")) / n if n else 0.0,
             "verifier_truncation_rate": sum(1 for r in valid if r.get("verifier_truncated")) / n if n else 0.0,
             "generator_accuracy_nontruncated": sum(1 for r in non_trunc if r.get("actual_correctness")) / len(non_trunc) if non_trunc else 0.0,
         },
-
         "confidence": {
             "generator": {
                 "mean_token_prob_proxy": conf["confidence"]["generator"]["mean_token_prob_proxy"],
@@ -524,7 +621,6 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
                 },
             },
         },
-
         "confidence_linkage": {
             "generator": {
                 "confidence_correct_gap": conf["confidence_accuracy_linkage"]["generator_token_prob_proxy"]["gap"],
@@ -537,7 +633,6 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
                 "mean_conf_incorrect": conf["confidence_accuracy_linkage"]["verifier_avg_logprob"]["mean_conf_incorrect"],
             },
         },
-
         "discrimination": {
             "generator": {
                 "auroc": conf["discrimination"]["generator_token_prob_proxy_auroc"],
@@ -546,20 +641,18 @@ def compute_summary(results, dataset, pilot_config_name, model, temperature, gen
                 "auroc": conf["discrimination"]["verifier_avg_logprob_auroc"],
             },
         },
-
         "calibration": {
             "generator": {
                 "brier": conf["calibration"]["generator_token_prob_proxy"]["brier"],
                 "ece": conf["calibration"]["generator_token_prob_proxy"]["ece"],
             },
         },
-
         "decision_policy_simulation": _compute_decision_simulation(valid),
     }
 
 
 async def run_dataset_ratio_async(
-    input_path, dataset, generator_ratio, pilot_config_name,
+    input_path, dataset, generator_ratio,
     model, temperature, limit, out_path, save_every,
     concurrency, batch_size, retry_errors_only,
     prompt_builder, parse_generation, evaluator,
@@ -600,7 +693,7 @@ async def run_dataset_ratio_async(
         ver_decision = parse_verifier(ver_resp["text"])
         return build_result_row(
             item, gen_resp, ver_resp, gen_reasoning, predicted,
-            actual_correctness, ver_decision, dataset, pilot_config_name, model, budget,
+            actual_correctness, ver_decision, dataset, model, budget,
         )
 
     out_by_idx = dict(cached)
@@ -615,42 +708,41 @@ async def run_dataset_ratio_async(
     return [
         out_by_idx.get(i, {
             "id": None, "dataset": dataset,
-            "pilot_config": pilot_config_name, "model": model,
-            "error": "Missing result row",
+            "model": model, "error": "Missing result row",
         })
         for i in range(n_total)
     ]
 
 
-
-def run_pilot(
-    *, datasets, pilot_config_name, model, temperature, limit,
-    output_dir, save_every, generator_ratios=None,
+def run_sweep(
+    *, datasets, model, temperature, limit,
+    output_dir, save_every, generator_ratios,
     concurrency=1, batch_size=None, retry_errors_only=False, input_override=None,
 ):
-    pilot_cfg = PILOT_CONFIGS[pilot_config_name]
-    generator_ratios = list(generator_ratios or pilot_cfg["generator_ratios"])
     concurrency = max(1, concurrency)
     batch_size = batch_size or max(10, concurrency * 5)
+    
+    if generator_ratios is None:
+        generator_ratios = CONFIGS["medium"]["generator_ratios"] # same for all difficulty levels 
 
     for dataset in datasets:
-        input_path = input_override or DATASET_PATHS[dataset]["pilot"]
+        input_path = input_override or DATASET_PATHS[dataset]["main"]
         prompt_builder = GENERATOR_PROMPT_REGISTRY[dataset]
         parse_generation = GENERATION_PARSER_REGISTRY[dataset]
         evaluator = EVALUATOR_REGISTRY[dataset]
 
         for ratio in generator_ratios:
-            out_path = f"{output_dir}/{dataset}_{pilot_config_name}_r{int(ratio * 100)}.jsonl"
+            out_path = f"{output_dir}/{dataset}_r{int(ratio * 100)}.jsonl"
 
             results = asyncio.run(run_dataset_ratio_async(
-                input_path, dataset, ratio, pilot_config_name,
+                input_path, dataset, ratio,
                 model, temperature, limit, out_path, save_every,
                 concurrency, batch_size, retry_errors_only,
                 prompt_builder, parse_generation, evaluator,
             ))
             save_jsonl(results, out_path)
 
-            summary = compute_summary(results, dataset, pilot_config_name, model, temperature, ratio)
+            summary = compute_summary(results, dataset, model, temperature, ratio)
             save_json(summary, out_path.replace(".jsonl", "_summary.json"))
 
             ov = summary["performance"]["overall"]
@@ -663,13 +755,12 @@ def run_pilot(
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run pilot Generator → Verifier experiments.")
+    parser = argparse.ArgumentParser(description="Run Sweep over Generator → Verifier configurations.")
     parser.add_argument("--datasets", nargs="+", default=["gsm8k", "strategyqa", "truthfulqa"])
-    parser.add_argument("--pilot-config", default="pilot_default", choices=sorted(PILOT_CONFIGS.keys()))
     parser.add_argument("--generator-ratios", type=float, nargs="+", default=None)
     parser.add_argument("--model", default="gpt-4o-mini")
     parser.add_argument("--limit", type=int, default=None)
-    parser.add_argument("--output-dir", default="data/experiments/pilot")
+    parser.add_argument("--output-dir", default="data/experiments/sweep")
     parser.add_argument("--input", dest="input_override", default=None)
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--temperature", type=float, default=0.0)
@@ -682,9 +773,8 @@ def parse_args():
 if __name__ == "__main__":
     t0 = time.perf_counter()
     args = parse_args()
-    run_pilot(
+    run_sweep(
         datasets=args.datasets,
-        pilot_config_name=args.pilot_config,
         model=args.model,
         temperature=args.temperature,
         limit=args.limit,

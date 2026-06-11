@@ -8,6 +8,29 @@ import matplotlib.pyplot as plt
 
 from src.utils.io import save_jsonl
 
+# + analyze how many tokens were use to not truncate per difficulty
+
+_EXPECTED_METRIC_KEYS = (
+    "generator_accuracy",
+    "verifier_accuracy",
+    "false_positive_rate",
+    "error_detection_rate",
+    "false_negative_rate",
+    "system_level_accuracy",
+    "generator_truncation_rate",
+)
+
+
+def _to_float(x, default=0.0):
+    if x is None:
+        return float(default)
+    if isinstance(x, bool):
+        return float(x)
+    try:
+        return float(x)
+    except Exception:
+        return float(default)
+
 
 def load_points(input_dir, recursive=False):
     points = []
@@ -19,33 +42,41 @@ def load_points(input_dir, recursive=False):
     )
 
     for path in sorted(files):
+
+        if path.name in {"analysis_summary.json"}:
+            continue
+
         summary = json.loads(path.read_text(encoding="utf-8"))
 
+        if not isinstance(summary, dict):
+            continue
+        
+        if not any(k in summary for k in _EXPECTED_METRIC_KEYS):
+            continue
+
         budget = summary.get("budget", {})
+        if not isinstance(budget, dict):
+            continue
 
-        points.append({
-            "dataset": summary.get("dataset"),
-            "model": summary.get("model"),
+        dataset = summary.get("dataset")
+        model = summary.get("model")
+        if dataset is None or model is None:
+            continue
 
-            "generator_ratio": float(budget.get("generator_ratio", 0)),
-            "generator_max_tokens": int(budget.get("generator_max_tokens", 0)),
-            "verifier_max_tokens": int(budget.get("verifier_max_tokens", 0)),
+        point = dict(summary)
+        point["dataset"] = dataset
+        point["model"] = model
+        point["summary_path"] = str(path)
+        point["output_jsonl"] = summary.get("output")
 
-            "generator_accuracy": float(summary.get("generator_accuracy", 0)),
-            "verifier_accuracy": float(summary.get("verifier_accuracy", 0)),
+        point["generator_ratio"] = _to_float(budget.get("generator_ratio", 0), default=0.0)
+        point["generator_max_tokens"] = int(budget.get("generator_max_tokens", 0) or 0)
+        point["verifier_max_tokens"] = int(budget.get("verifier_max_tokens", 0) or 0)
 
-            "false_positive_rate": float(summary.get("false_positive_rate", 0)),
-            "false_negative_rate": float(summary.get("false_negative_rate", 0)),
+        if "error_detection_rate" not in point and "false_positive_rate" in point:
+            point["error_detection_rate"] = 1.0 - _to_float(point.get("false_positive_rate"), default=0.0)
 
-            "system_level_accuracy": float(summary.get("system_level_accuracy", 0)),
-
-            "generator_truncation_rate": float(
-                summary.get("generator_truncation_rate", 0)
-            ),
-
-            "summary_path": str(path),
-            "output_jsonl": summary.get("output"),
-        })
+        points.append(point)
 
     return points
 
@@ -60,19 +91,20 @@ def _summarize(points):
         "generator_accuracy",
         "verifier_accuracy",
         "false_positive_rate",
+        "error_detection_rate",
         "false_negative_rate",
         "system_level_accuracy",
         "generator_truncation_rate",
     ]
 
-    overall = {m: _safe_mean(p.get(m, 0.0) for p in points) for m in metrics}
+    overall = {m: _safe_mean(_to_float(p.get(m), default=0.0) for p in points) for m in metrics}
 
     by_vb = defaultdict(list)
     for p in points:
         by_vb[int(p.get("verifier_max_tokens", 0) or 0)].append(p)
 
     by_verifier_budget = {
-        str(vb): {m: _safe_mean(p.get(m, 0.0) for p in rows) for m in metrics}
+        str(vb): {m: _safe_mean(_to_float(p.get(m), default=0.0) for p in rows) for m in metrics}
         | {"n": len(rows)}
         for vb, rows in sorted(by_vb.items(), key=lambda kv: kv[0])
         if vb > 0
@@ -135,8 +167,8 @@ def plot_metric(points, x_key, y_key, title, out_path):
     plt.figure(figsize=(7, 5))
 
     for model, vals in grouped.items():
-        xs = [v[x_key] for v in vals]
-        ys = [v[y_key] for v in vals]
+        xs = [_to_float(v.get(x_key), default=0.0) for v in vals]
+        ys = [_to_float(v.get(y_key), default=0.0) for v in vals]
 
         plt.scatter(xs, ys, label=model)
 
@@ -182,6 +214,7 @@ def main():
                 "input_dir": str(input_dir),
                 "recursive": bool(args.recursive),
                 "n_summaries": len(points),
+                "ratio_summaries": points,
                 **summary,
             },
             ensure_ascii=False,
@@ -196,6 +229,9 @@ def main():
 
     out_fnr = output_dir / "false_negative_rate_vs_verifier_budget.png"
     plot_metric(points, "verifier_max_tokens", "false_negative_rate", "FNR vs verifier budget", out_fnr)
+
+    out_edr = output_dir / "error_detection_rate_vs_verifier_budget.png"
+    plot_metric(points, "verifier_max_tokens", "error_detection_rate", "EDR vs verifier budget", out_edr)
 
     out_vacc = output_dir / "verifier_accuracy_vs_verifier_budget.png"
     plot_metric(points, "verifier_max_tokens", "verifier_accuracy", "Verifier accuracy vs verifier budget", out_vacc)
@@ -215,6 +251,7 @@ def main():
     print(f"Wrote: {out_summary_json}")
     print(f"Wrote: {out_fpr}")
     print(f"Wrote: {out_fnr}")
+    print(f"Wrote: {out_edr}")
     print(f"Wrote: {out_vacc}")
     print(f"Wrote: {out_sys}")
     print(f"Wrote: {out_gacc}")

@@ -28,7 +28,6 @@ def parse_gsm8k_generation(output):
 
 def parse_gsm8k(text):
     """Extract a single numeric answer from a model output.
-
     Accepts raw strings or a dict that contains a `text` field.
     """
 

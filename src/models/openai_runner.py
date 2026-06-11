@@ -12,6 +12,7 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 async_client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY")) if AsyncOpenAI is not None else None
 
 DEFAULT_MAX_TOKENS = 120
+MAX_TOP_LOGPROBS = 20
 
 
 def _extract_completion_logprob_metrics(choice0: Any) -> tuple[float | None, float | None, int | None]:
@@ -167,7 +168,11 @@ def run_model(
     if logprobs:
         kwargs["logprobs"] = True
         if top_logprobs is not None:
-            kwargs["top_logprobs"] = int(top_logprobs)
+            tlp = int(top_logprobs)
+            if tlp > MAX_TOP_LOGPROBS:
+                tlp = MAX_TOP_LOGPROBS
+            if tlp > 0:
+                kwargs["top_logprobs"] = tlp
 
     try:
         response = client.chat.completions.create(**kwargs)
@@ -241,7 +246,11 @@ async def run_model_async(
     if logprobs:
         kwargs["logprobs"] = True
         if top_logprobs is not None:
-            kwargs["top_logprobs"] = int(top_logprobs)
+            tlp = int(top_logprobs)
+            if tlp > MAX_TOP_LOGPROBS:
+                tlp = MAX_TOP_LOGPROBS
+            if tlp > 0:
+                kwargs["top_logprobs"] = tlp
 
     try:
         response = await async_client.chat.completions.create(**kwargs)

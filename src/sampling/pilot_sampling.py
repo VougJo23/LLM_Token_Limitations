@@ -4,7 +4,6 @@ from src.utils.io import load_jsonl, save_jsonl
 
 # takes diverse samples from all datasets to pilot the eval pipeline
 
-
 def load_to_dataframe(path):
     data = list(load_jsonl(path))
     df = pd.DataFrame(data)
@@ -29,11 +28,9 @@ def select_diverse_samples(df, n=30):
     # Most complex reasoning
     selected.append(df.loc[df["reasoning_steps"].idxmax()])
 
-    # Median length (representative case)
     median_idx = (df["total_tokens_estimate"] - df["total_tokens_estimate"].median()).abs().idxmin()
     selected.append(df.loc[median_idx])
 
-    # Remove duplicates
     selected_df = pd.DataFrame(selected).drop_duplicates(subset="id")
 
 
@@ -49,10 +46,14 @@ def select_diverse_samples(df, n=30):
 
 def pilot_gsm8k(input_path, output_path, n=30):
     df = load_to_dataframe(input_path)
+
     pilot = select_diverse_samples(df, n=n)
+
     save_jsonl(pilot.to_dict(orient="records"), output_path)
     print(f"{output_path}")
 
+    print(pilot[["reasoning_bin", "length_bin"]].drop_duplicates(),
+          pilot.groupby(["reasoning_bin", "length_bin"]).size())
 
 def pilot_strategyqa(input_path, output_path, n=3):
     df = load_to_dataframe(input_path)
@@ -70,6 +71,9 @@ def pilot_strategyqa(input_path, output_path, n=3):
 
     save_jsonl(selected.to_dict(orient="records"), output_path)
     print(f"{output_path}")
+    
+    print(len(selected), selected[["reasoning_bin", "length_bin"]].drop_duplicates(),
+          selected.groupby(["reasoning_bin", "length_bin"]).size())
 
 
 def pilot_truthfulqa(input_path, output_path, n=3):
@@ -94,14 +98,14 @@ def run_pilot_sampling():
 
     pilot_gsm8k(
         "data/samples/gsm8k.jsonl",
-        "data/pilot/gsm8k_pilot.jsonl",
+        "data/experiments/budget_sweep/pilot/gsm8k_pilot.jsonl",
         n=100
     )
 
     pilot_strategyqa(
         "data/samples/strategyqa.jsonl",
-        "data/pilot/strategyqa_pilot.jsonl",
-        n=3
+        "data/experiments/budget_sweep/pilot/strategyqa_pilot.jsonl",
+        n=30
     )
 
     pilot_truthfulqa(

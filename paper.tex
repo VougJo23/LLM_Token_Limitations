@@ -1,0 +1,114 @@
+%!TEX program = lualatex
+\documentclass[12pt, a4paper]{report}
+% --- Packages ---
+\usepackage{amsmath}
+% --- Ρύθμιση Γλώσσας και Γραμματοσειρών (Για LuaLaTeX / XeLaTeX) ---
+\usepackage{fontspec}
+
+% Ορίζουμε μια γραμματοσειρά συστήματος που έχει ελληνικά (π.χ. Times New Roman)
+\setmainfont{Times New Roman}
+\usepackage{graphicx} % for university logo
+\usepackage[style=apa, backend=biber]{biblatex} % --- APA 7th Edition Bibliography Setup ---
+\addbibresource{references.bib} 
+
+
+\begin{document}
+
+
+
+
+
+
+
+
+\begin{titlepage}
+    \begin{center}
+        \vspace*{1cm}
+        
+        % --- University Information ---
+        \Huge
+        \textbf{ATHENS UNIVERSITY OF ECONOMICS AND BUSINESS} \\
+        \vspace{0.5cm}
+        \Large
+        Department of Management Science and Technology % Change to your department
+        \vspace{0.5cm}
+        \includegraphics[width=0.8\textwidth]{2_AUEB-white-LR.jpg}
+        \vspace{2cm}
+        
+        % --- Thesis Title ---
+        \huge
+        \textbf{Thesis Title} \\
+        \vspace{0.5cm}
+        \LARGE
+        Thesis Subtitle
+        
+        \vspace{3cm}
+        
+        % --- Author & Advisor Information ---
+        % Using columns to put Author on the left and Advisor on the right
+        \begin{minipage}{0.4\textwidth}
+            \begin{flushleft} \large
+                \emph{Author:}\\
+                \textbf{Ioanna Vougiatzi} \\
+                Student ID: 8220020
+            \end{flushleft}
+        \end{minipage}
+        \hfill
+        \begin{minipage}{0.4\textwidth}
+            \begin{flushright} \large
+                \emph{Thesis Advisor:} \\
+                \textbf{Panagiotis Louridas} \\
+            \end{flushright}
+        \end{minipage}
+        
+        \vfill
+        
+        % --- Date/Location ---
+        \large
+        Athens, Greece \\ % Change to your city
+        July 2026 % Automatically prints the current date, or replace with "June 2026"
+        
+    \end{center}
+\end{titlepage}
+
+
+
+
+% --- Table of Contents ---
+\tableofcontents
+\newpage
+
+
+
+
+% --- ABSTRACT ---
+\chapter{Abstract}
+\section{Background Information}
+Abstract Text
+\section{Problem Statement}
+You can just keep writing normally here...
+\newpage
+
+
+
+
+% --- FIRST CHAPTER - INTRODUCTION ---
+\chapter{Introduction}
+\addcontentsline{toc}{chapter}{Introduction}
+\section{Background Information}
+Introduction Text
+\section{Problem Statement}
+You can just keep writing normally here...
+
+\chapter*{Module A: Core Foundation}
+\addcontentsline{toc}{chapter}{Module A: Core Foundation}
+
+
+This module text goes here...
+
+\section*{Sub-Module: Data Collection}
+\addcontentsline{toc}{section}{Sub-Module: Data Collection}
+
+This sub-module text goes here...
+
+\end{document}

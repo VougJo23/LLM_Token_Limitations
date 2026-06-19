@@ -118,16 +118,26 @@ def extract_verifier_signals(verifier_text, finish_reason=None):
 ATTACK_TYPES = ["arithmetic", "assumption", "mismatch", "persuasive"]
 
 
-def assign_balanced_attack_types(items: list[dict]) -> None:
+def assign_balanced_attack_types(items: list[dict], difficulty_limits: dict[str, int] | None = None) -> None:
     at = ATTACK_TYPES
     by_diff: dict[str, list[dict]] = {"easy": [], "medium": [], "hard": []}
     for item in items:
         d = item.get("difficulty", "medium")
         if d in by_diff:
             by_diff[d].append(item)
-    for diff_items in by_diff.values():
-        for i, item in enumerate(diff_items):
+
+    kept = []
+    for diff, diff_items in by_diff.items():
+        limit = difficulty_limits.get(diff, len(diff_items)) if difficulty_limits else len(diff_items)
+        keep = (limit // 4) * 4
+        diff_items.sort(key=lambda x: str(x.get("id", "")))
+        batch = diff_items[:keep]
+        for i, item in enumerate(batch):
             item["attack_type"] = at[i % len(at)]
+        kept.extend(batch)
+
+    items.clear()
+    items.extend(kept)
 
 
 def inject_wrong_but_persuasive(prompt: str) -> str:
@@ -141,7 +151,8 @@ def inject_wrong_but_persuasive(prompt: str) -> str:
     )
 
 
-def compute_summary(dataset, model, temperature, verifier_ratio, rows, output_jsonl_path):
+def compute_summary(dataset, model, temperature, verifier_ratio, rows, output_jsonl_path, verifier_model=None,
+                    generator_provider="openai", verifier_provider="openai"):
     valid = [r for r in rows if isinstance(r, dict) and "error" not in r]
     n = len(valid)
 
@@ -178,6 +189,9 @@ def compute_summary(dataset, model, temperature, verifier_ratio, rows, output_js
     return {
         "dataset": dataset,
         "model": model,
+        "model_provider": generator_provider,
+        "verifier_model": verifier_model,
+        "verifier_provider": verifier_provider,
         "temperature": temperature,
         "n_total": len(rows),
         "n_valid": n,
@@ -208,7 +222,8 @@ def compute_summary(dataset, model, temperature, verifier_ratio, rows, output_js
 
 
 async def run_generator_async(dataset, input_path, prompt_builder, parse_generation, evaluator,
-                                model, temperature, limit, save_every, out_path, concurrency):
+                                model, temperature, limit, save_every, out_path, concurrency,
+                                provider="openai"):
     sem = asyncio.Semaphore(concurrency)
     batch_size = max(10, concurrency * 5)
     items = [item for idx, item in enumerate(load_jsonl(input_path)) if limit is None or idx < limit]
@@ -221,6 +236,7 @@ async def run_generator_async(dataset, input_path, prompt_builder, parse_generat
         cfg = CONFIGS2.get(difficulty, CONFIGS2["medium"])
         gen_max = cfg["total_max_tokens"]
         gen_budget = int(gen_max * 0.8)
+        #gen_budget = int(gen_max)
         attack_type = item.get("attack_type", "persuasive")
         try:
             if dataset == "gsm8k":
@@ -229,13 +245,13 @@ async def run_generator_async(dataset, input_path, prompt_builder, parse_generat
                 gen_prompt = inject_wrong_but_persuasive(prompt_builder(item, reasoning_budget=gen_budget))
             async with sem:
                 resp = await run_model_async(prompt=gen_prompt, model=model, temperature=temperature,
-                                             max_tokens=gen_max, logprobs=True)
+                                             max_tokens=gen_max, logprobs=True, provider=provider)
             finish = resp.get("finish_reason")
             reasoning, predicted = parse_generation(resp["text"])
             actual_correctness = evaluator(predicted, item)
             return {
                 "id": item.get("id"), "dataset": dataset, "model": model,
-                "gold": item.get("answer", {}).get("ideal"), "difficulty": difficulty,
+                "question": item.get("question", ""), "gold": item.get("answer", {}).get("ideal"), "difficulty": difficulty,
                 "attack_type": attack_type,
                 "predicted_answer": predicted,
                 "generator_correct": actual_correctness,
@@ -275,9 +291,11 @@ async def run_generator_async(dataset, input_path, prompt_builder, parse_generat
 
 
 async def run_verifier_async(dataset, generator_rows, question_by_id, gen_cache_path,
-                              ratio, model, temperature, save_every, out_path, concurrency):
+                              ratio, model, temperature, save_every, out_path, concurrency,
+                              verifier_model=None, provider="openai"):
     sem = asyncio.Semaphore(concurrency)
-    batch_size = max(10, concurrency * 5)
+    batch_size = min(10, concurrency)
+    #batch_size = max(10, concurrency * 5)
 
     async def process_one(gen_row):
         difficulty = gen_row.get("difficulty", "medium")
@@ -294,6 +312,8 @@ async def run_verifier_async(dataset, generator_rows, question_by_id, gen_cache_
             "generator_finish_reason": gen_row.get("generator_finish_reason"),
             "generator_max_tokens": gen_row.get("generator_max_tokens"),
             "generator_reasoning_budget": gen_row.get("generator_reasoning_budget"),
+            "generator_reasoning": gen_row.get("generator_reasoning"),
+            "generator_completion_tokens": gen_row.get("completion_tokens"),
             "generator_cache": gen_cache_path,
         }
         if "error" in gen_row:
@@ -306,9 +326,10 @@ async def run_verifier_async(dataset, generator_rows, question_by_id, gen_cache_
                 verifier_max_tokens=ver_max,
             )
             async with sem:
-                resp = await run_model_async(prompt=ver_prompt, model=model, temperature=temperature,
+                resp = await run_model_async(prompt=ver_prompt, model=verifier_model or model, temperature=temperature,
                                              max_tokens=ver_max, logprobs=True, top_logprobs=50,
-                                             return_token_logprobs=True, token_logprobs_last_n=12)
+                                             return_token_logprobs=True, token_logprobs_last_n=12,
+                                             provider=provider)
             finish = resp.get("finish_reason")
             ver_decision = parse_verifier(resp["text"])
             signals = extract_verifier_signals(resp["text"], finish_reason=finish)
@@ -359,12 +380,14 @@ async def run_verifier_async(dataset, generator_rows, question_by_id, gen_cache_
 
 
 def run_pilot2(*, datasets, model, temperature, limit, output_dir,
-               save_every=25, verifier_ratios=None, concurrency=1, reuse_generator_cache=False):
+               save_every=25, verifier_ratios=None, concurrency=1, reuse_generator_cache=False,
+               verifier_model=None, input_file=None,
+               generator_provider="openai", verifier_provider="openai"):
     verifier_ratios = verifier_ratios or list(CONFIGS2["medium"]["verifier_ratios"])
     concurrency = max(1, int(concurrency))
 
     for dataset in datasets:
-        input_path = DATASET_PATHS[dataset]["pilot"]
+        input_path = input_file or DATASET_PATHS[dataset]["pilot"]
         prompt_builder = GENERATOR_PROMPT_REGISTRY[dataset]
         parse_generation = GENERATION_PARSER_REGISTRY[dataset]
         evaluator = EVALUATOR_REGISTRY[dataset]
@@ -387,6 +410,7 @@ def run_pilot2(*, datasets, model, temperature, limit, output_dir,
             generator_rows = asyncio.run(run_generator_async(
                 dataset, input_path, prompt_builder, parse_generation, evaluator,
                 model, temperature, limit, save_every, gen_cache_path, concurrency,
+                provider=generator_provider,
             ))
             save_jsonl(generator_rows, gen_cache_path)
 
@@ -395,11 +419,15 @@ def run_pilot2(*, datasets, model, temperature, limit, output_dir,
             results = asyncio.run(run_verifier_async(
                 dataset, generator_rows, question_by_id, gen_cache_path,
                 ratio, model, temperature, save_every, out_path, concurrency,
+                verifier_model=verifier_model, provider=verifier_provider,
             ))
             save_jsonl(results, out_path)
 
             summary = compute_summary(dataset=dataset, model=model, temperature=temperature,
-                                      verifier_ratio=float(ratio), rows=results, output_jsonl_path=out_path)
+                                      verifier_ratio=float(ratio), rows=results, output_jsonl_path=out_path,
+                                      verifier_model=verifier_model,
+                                      generator_provider=generator_provider,
+                                      verifier_provider=verifier_provider)
             summary_path = out_path.replace(".jsonl", "_summary.json")
             p = Path(summary_path)
             p.parent.mkdir(parents=True, exist_ok=True)
@@ -415,19 +443,29 @@ def parse_args():
     p = argparse.ArgumentParser(description="Generator (wrong-but-persuasive) + verifier sweep with per-difficulty budgets.")
     p.add_argument("--datasets", nargs="+", default=["gsm8k", "strategyqa", "truthfulqa"])
     p.add_argument("--verifier-ratios", type=float, nargs="+", default=None)
-    p.add_argument("--model", default="gpt-4o-mini")
+    p.add_argument("--model", default="gpt-4.1-mini")
+    p.add_argument("--verifier-model", default="gpt-4o")
     p.add_argument("--temperature", type=float, default=0.0)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--output-dir", default="data/pilot2")
     p.add_argument("--save-every", type=int, default=25)
     p.add_argument("--concurrency", type=int, default=1)
     p.add_argument("--reuse-generator-cache", action="store_true")
+    p.add_argument("--input-file", default=None, help="Override input JSONL path per dataset (e.g. a specific sample file)")
+    p.add_argument("--generator-provider", default="qwen", choices=["openai", "qwen", "llama"],
+                   help="API provider for the generator model (default: openai)")
+    p.add_argument("--verifier-provider", default="qwen", choices=["openai", "qwen", "llama"],
+                   help="API provider for the verifier model (default: openai)")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
     args = parse_args()
+    if args.verifier_provider == "qwen":
+        args.verifier_model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
+    elif args.verifier_provider == "llama":
+        args.verifier_model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
     run_pilot2(
         datasets=args.datasets,
         model=args.model,
@@ -438,6 +476,10 @@ if __name__ == "__main__":
         verifier_ratios=args.verifier_ratios,
         concurrency=args.concurrency,
         reuse_generator_cache=args.reuse_generator_cache,
+        verifier_model=args.verifier_model,
+        input_file=args.input_file,
+        generator_provider=args.generator_provider,
+        verifier_provider=args.verifier_provider,
     )
     elapsed = time.perf_counter() - t0
     hh, rem = divmod(int(elapsed), 3600)

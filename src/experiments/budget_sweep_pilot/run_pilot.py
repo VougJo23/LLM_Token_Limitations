@@ -656,6 +656,7 @@ async def run_dataset_ratio_async(
     model, temperature, limit, out_path, save_every,
     concurrency, batch_size, retry_errors_only,
     prompt_builder, parse_generation, evaluator,
+    *, verifier_provider="openai", verifier_model=None,
 ):
     sem = asyncio.Semaphore(concurrency)
     existing = load_existing(out_path) if retry_errors_only else {}
@@ -678,6 +679,7 @@ async def run_dataset_ratio_async(
             gen_resp = await run_model_async(
                 prompt=gen_prompt, model=model, temperature=temperature,
                 max_tokens=budget["generator_max_tokens"], logprobs=True,
+                provider="openai",
             )
         gen_reasoning, predicted = parse_generation(gen_resp["text"])
         actual_correctness = evaluator(predicted, item)
@@ -686,9 +688,10 @@ async def run_dataset_ratio_async(
         )
         async with sem:
             ver_resp = await run_model_async(
-                prompt=ver_prompt, model=model, temperature=temperature,
+                prompt=ver_prompt, model=verifier_model or model, temperature=temperature,
                 max_tokens=budget["verifier_max_tokens"], logprobs=True,
                 top_logprobs=50, return_token_logprobs=True, token_logprobs_last_n=12,
+                provider=verifier_provider,
             )
         ver_decision = parse_verifier(ver_resp["text"])
         return build_result_row(
@@ -718,6 +721,7 @@ def run_sweep(
     *, datasets, model, temperature, limit,
     output_dir, save_every, generator_ratios,
     concurrency=1, batch_size=None, retry_errors_only=False, input_override=None,
+    verifier_provider="openai", verifier_model=None,
 ):
     concurrency = max(1, concurrency)
     batch_size = batch_size or max(10, concurrency * 5)
@@ -726,7 +730,14 @@ def run_sweep(
         generator_ratios = CONFIGS["medium"]["generator_ratios"] # same for all difficulty levels 
 
     for dataset in datasets:
-        input_path = input_override or DATASET_PATHS[dataset]["main"]
+        ds_paths = DATASET_PATHS.get(dataset) or {}
+        input_path = input_override or next(
+            (ds_paths[k] for k in ("sample", "raw", "pilot") if ds_paths.get(k)),
+            None,
+        )
+        if not input_path:
+            print(f"ERROR: no input path for dataset {dataset!r}")
+            continue
         prompt_builder = GENERATOR_PROMPT_REGISTRY[dataset]
         parse_generation = GENERATION_PARSER_REGISTRY[dataset]
         evaluator = EVALUATOR_REGISTRY[dataset]
@@ -739,6 +750,7 @@ def run_sweep(
                 model, temperature, limit, out_path, save_every,
                 concurrency, batch_size, retry_errors_only,
                 prompt_builder, parse_generation, evaluator,
+                verifier_provider=verifier_provider, verifier_model=verifier_model,
             ))
             save_jsonl(results, out_path)
 
@@ -758,7 +770,7 @@ def parse_args():
     parser = argparse.ArgumentParser(description="Run Sweep over Generator → Verifier configurations.")
     parser.add_argument("--datasets", nargs="+", default=["gsm8k", "strategyqa", "truthfulqa"])
     parser.add_argument("--generator-ratios", type=float, nargs="+", default=None)
-    parser.add_argument("--model", default="gpt-4o-mini")
+    parser.add_argument("--model", default="gpt-4.1-mini")
     parser.add_argument("--limit", type=int, default=None)
     parser.add_argument("--output-dir", default="data/experiments/sweep")
     parser.add_argument("--input", dest="input_override", default=None)
@@ -767,12 +779,18 @@ def parse_args():
     parser.add_argument("--save-every", type=int, default=25)
     parser.add_argument("--batch-size", type=int, default=None)
     parser.add_argument("--retry-errors-only", action="store_true")
+    parser.add_argument("--verifier-provider", default="openai", choices=["openai", "qwen", "llama"],
+                        help="API provider for the verifier model (default: openai)")
+    parser.add_argument("--verifier-model", default=None,
+                        help="Verifier model (auto-set to Qwen/Qwen2.5-7B-Instruct-Turbo when --verifier-provider qwen)")
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
     args = parse_args()
+    if args.verifier_provider == "qwen" and args.verifier_model is None:
+        args.verifier_model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
     run_sweep(
         datasets=args.datasets,
         model=args.model,
@@ -785,6 +803,8 @@ if __name__ == "__main__":
         batch_size=args.batch_size,
         retry_errors_only=args.retry_errors_only,
         input_override=args.input_override,
+        verifier_provider=args.verifier_provider,
+        verifier_model=args.verifier_model,
     )
     
     elapsed = time.perf_counter() - t0

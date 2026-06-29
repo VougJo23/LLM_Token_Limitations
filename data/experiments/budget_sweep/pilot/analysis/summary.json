@@ -1,0 +1,377 @@
+{
+  "inputs": [
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r60.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r70.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r80.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r90.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r60.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r70.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r80.jsonl",
+    "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r90.jsonl",
+  ],
+  "n_inputs": 11,
+  "n_analyzed": 6,
+  "n_skipped": 5,
+  "skipped": [
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot.jsonl",
+      "reason": "missing_verifier_decision"
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r60.jsonl",
+      "reason": "missing_verifier_decision"
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r70.jsonl",
+      "reason": "missing_verifier_decision"
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\strategyqa_pilot.jsonl",
+      "reason": "missing_verifier_decision"
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\truthfulqa_pilot.jsonl",
+      "reason": "missing_verifier_decision"
+    }
+  ],
+  "results": [
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r80.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 2725,
+          "n_valid": 14,
+          "n_decided": 14
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.5,
+          "generator_accuracy": 0.7142857142857143
+        },
+        "verification": {
+          "error_detection_rate": 1.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.7,
+          "accept_rate": 0.21428571428571427,
+          "reject_rate": 0.7857142857142857,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0,
+            "correct_accepts": 3,
+            "false_rejects": 7,
+            "correct_rejections": 4,
+            "lazy_accepts": 0
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 229.9,
+          "generator_tokens_per_sample": 161.42857142857142,
+          "verifier_tokens_per_sample": 2.7857142857142856
+        },
+        "budget": {
+          "generator_ratio": 0.8
+        },
+        "per_difficulty": {
+          "unknown": {
+            "generator_accuracy": 0.7142857142857143,
+            "verifier_accuracy": 0.5,
+            "fpr": 0.0,
+            "fnr": 0.7,
+            "system_accuracy": 0.5
+          }
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_gen_medium_r90.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 600,
+          "n_valid": 11,
+          "n_decided": 11
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.45454545454545453,
+          "generator_accuracy": 0.9090909090909091
+        },
+        "verification": {
+          "error_detection_rate": 1.0,
+          "false_positive_rate": 0.0,
+          "false_negative_rate": 0.6,
+          "accept_rate": 0.36363636363636365,
+          "reject_rate": 0.6363636363636364,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0,
+            "correct_accepts": 4,
+            "false_rejects": 6,
+            "correct_rejections": 1,
+            "lazy_accepts": 0
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 193.5,
+          "generator_tokens_per_sample": 173.27272727272728,
+          "verifier_tokens_per_sample": 2.6363636363636362
+        },
+        "budget": {
+          "generator_ratio": 0.9
+        },
+        "per_difficulty": {
+          "unknown": {
+            "generator_accuracy": 0.9090909090909091,
+            "verifier_accuracy": 0.45454545454545453,
+            "fpr": 0.0,
+            "fnr": 0.6,
+            "system_accuracy": 0.45454545454545453
+          }
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r60.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 100,
+          "n_valid": 100,
+          "n_decided": 100
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.78,
+          "generator_accuracy": 0.79
+        },
+        "verification": {
+          "error_detection_rate": 0.3333333333333333,
+          "false_positive_rate": 0.6666666666666666,
+          "false_negative_rate": 0.10126582278481013,
+          "accept_rate": 0.85,
+          "reject_rate": 0.15,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.14,
+            "correct_accepts": 71,
+            "false_rejects": 8,
+            "correct_rejections": 7,
+            "lazy_accepts": 14
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 183.1772151898734,
+          "generator_tokens_per_sample": 118.5,
+          "verifier_tokens_per_sample": 26.21
+        },
+        "budget": {
+          "generator_ratio": 0.6
+        },
+        "per_difficulty": {
+          "easy": {
+            "generator_accuracy": 0.9142857142857143,
+            "verifier_accuracy": 0.8571428571428571,
+            "fpr": 0.6666666666666666,
+            "fnr": 0.09375,
+            "system_accuracy": 0.8571428571428571
+          },
+          "hard": {
+            "generator_accuracy": 0.5666666666666667,
+            "verifier_accuracy": 0.6666666666666666,
+            "fpr": 0.6923076923076923,
+            "fnr": 0.058823529411764705,
+            "system_accuracy": 0.6666666666666666
+          },
+          "medium": {
+            "generator_accuracy": 0.8571428571428571,
+            "verifier_accuracy": 0.8,
+            "fpr": 0.6,
+            "fnr": 0.13333333333333333,
+            "system_accuracy": 0.8
+          }
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r70.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 100,
+          "n_valid": 100,
+          "n_decided": 100
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.87,
+          "generator_accuracy": 0.84
+        },
+        "verification": {
+          "error_detection_rate": 0.4375,
+          "false_positive_rate": 0.5625,
+          "false_negative_rate": 0.047619047619047616,
+          "accept_rate": 0.89,
+          "reject_rate": 0.11,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.09,
+            "correct_accepts": 80,
+            "false_rejects": 4,
+            "correct_rejections": 7,
+            "lazy_accepts": 9
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 179.38095238095238,
+          "generator_tokens_per_sample": 123.61,
+          "verifier_tokens_per_sample": 27.07
+        },
+        "budget": {
+          "generator_ratio": 0.7
+        },
+        "per_difficulty": {
+          "easy": {
+            "generator_accuracy": 0.9428571428571428,
+            "verifier_accuracy": 0.9428571428571428,
+            "fpr": 0.5,
+            "fnr": 0.030303030303030304,
+            "system_accuracy": 0.9428571428571428
+          },
+          "hard": {
+            "generator_accuracy": 0.6,
+            "verifier_accuracy": 0.7666666666666667,
+            "fpr": 0.5833333333333334,
+            "fnr": 0.0,
+            "system_accuracy": 0.7666666666666667
+          },
+          "medium": {
+            "generator_accuracy": 0.9428571428571428,
+            "verifier_accuracy": 0.8857142857142857,
+            "fpr": 0.5,
+            "fnr": 0.09090909090909091,
+            "system_accuracy": 0.8857142857142857
+          }
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r80.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 100,
+          "n_valid": 100,
+          "n_decided": 100
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.83,
+          "generator_accuracy": 0.86
+        },
+        "verification": {
+          "error_detection_rate": 0.21428571428571427,
+          "false_positive_rate": 0.7857142857142857,
+          "false_negative_rate": 0.06976744186046512,
+          "accept_rate": 0.91,
+          "reject_rate": 0.09,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.11,
+            "correct_accepts": 80,
+            "false_rejects": 6,
+            "correct_rejections": 3,
+            "lazy_accepts": 11
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 174.32558139534885,
+          "generator_tokens_per_sample": 123.67,
+          "verifier_tokens_per_sample": 26.25
+        },
+        "budget": {
+          "generator_ratio": 0.8
+        },
+        "per_difficulty": {
+          "easy": {
+            "generator_accuracy": 1.0,
+            "verifier_accuracy": 0.9714285714285714,
+            "fpr": 0.0,
+            "fnr": 0.02857142857142857,
+            "system_accuracy": 0.9714285714285714
+          },
+          "hard": {
+            "generator_accuracy": 0.6,
+            "verifier_accuracy": 0.7,
+            "fpr": 0.75,
+            "fnr": 0.0,
+            "system_accuracy": 0.7
+          },
+          "medium": {
+            "generator_accuracy": 0.9428571428571428,
+            "verifier_accuracy": 0.8,
+            "fpr": 1.0,
+            "fnr": 0.15151515151515152,
+            "system_accuracy": 0.8
+          }
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\pilot\\gsm8k_pilot_default_r90.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 100,
+          "n_valid": 100,
+          "n_decided": 100
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.84,
+          "generator_accuracy": 0.85
+        },
+        "verification": {
+          "error_detection_rate": 0.2,
+          "false_positive_rate": 0.8,
+          "false_negative_rate": 0.047058823529411764,
+          "accept_rate": 0.93,
+          "reject_rate": 0.07,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.12,
+            "correct_accepts": 81,
+            "false_rejects": 4,
+            "correct_rejections": 3,
+            "lazy_accepts": 12
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 179.61176470588236,
+          "generator_tokens_per_sample": 126.04,
+          "verifier_tokens_per_sample": 26.63
+        },
+        "budget": {
+          "generator_ratio": 0.9
+        },
+        "per_difficulty": {
+          "easy": {
+            "generator_accuracy": 1.0,
+            "verifier_accuracy": 1.0,
+            "fpr": 0.0,
+            "fnr": 0.0,
+            "system_accuracy": 1.0
+          },
+          "hard": {
+            "generator_accuracy": 0.5666666666666667,
+            "verifier_accuracy": 0.6333333333333333,
+            "fpr": 0.7692307692307693,
+            "fnr": 0.058823529411764705,
+            "system_accuracy": 0.6333333333333333
+          },
+          "medium": {
+            "generator_accuracy": 0.9428571428571428,
+            "verifier_accuracy": 0.8571428571428571,
+            "fpr": 1.0,
+            "fnr": 0.09090909090909091,
+            "system_accuracy": 0.8571428571428571
+          }
+        }
+      }
+    }
+  ]
+}

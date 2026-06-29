@@ -1,0 +1,170 @@
+{
+  "inputs": [
+    "data\\experiments\\budget_sweep\\main\\gsm8k_pilot_default_r60.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_pilot_default_r70.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_pilot_default_r80.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_pilot_default_r90.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_r45.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_r60.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_r75.jsonl",
+    "data\\experiments\\budget_sweep\\main\\gsm8k_r90.jsonl"
+  ],
+  "n_inputs": 8,
+  "n_analyzed": 8,
+  "n_skipped": 0,
+  "skipped": [],
+  "results": [
+    {
+      "input": "data\\experiments\\budget_sweep\\main\\gsm8k_r45.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 50,
+          "n_valid": 50,
+          "n_decided": 50
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.8,
+          "generator_accuracy": 0.8
+        },
+        "verification": {
+          "error_detection_rate": 0.5,
+          "false_positive_rate": 0.5,
+          "false_negative_rate": 0.125,
+          "accept_rate": 0.8,
+          "reject_rate": 0.2,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.1,
+            "correct_accepts": 35,
+            "false_rejects": 5,
+            "correct_rejections": 5,
+            "lazy_accepts": 5
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 205.95,
+          "generator_tokens_per_sample": 124.04,
+          "verifier_tokens_per_sample": 40.72
+        },
+        "budget": {
+          "generator_ratio": 0.45
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\main\\gsm8k_r60.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 1000,
+          "n_valid": 1000,
+          "n_decided": 1000
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.76,
+          "generator_accuracy": 0.835
+        },
+        "verification": {
+          "error_detection_rate": 0.4303030303030303,
+          "false_positive_rate": 0.5696969696969697,
+          "false_negative_rate": 0.17485029940119762,
+          "accept_rate": 0.783,
+          "reject_rate": 0.217,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.094,
+            "correct_accepts": 689,
+            "false_rejects": 146,
+            "correct_rejections": 71,
+            "lazy_accepts": 94
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 202.25508982035927,
+          "generator_tokens_per_sample": 125.645,
+          "verifier_tokens_per_sample": 43.238
+        },
+        "budget": {
+          "generator_ratio": 0.6
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\main\\gsm8k_r75.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 1000,
+          "n_valid": 1000,
+          "n_decided": 1000
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.782,
+          "generator_accuracy": 0.835
+        },
+        "verification": {
+          "error_detection_rate": 0.3696969696969697,
+          "false_positive_rate": 0.6303030303030303,
+          "false_negative_rate": 0.13652694610778443,
+          "accept_rate": 0.825,
+          "reject_rate": 0.175,
+          "abstain_rate": 0,
+          "coverage": 1.0,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.104,
+            "correct_accepts": 721,
+            "false_rejects": 114,
+            "correct_rejections": 61,
+            "lazy_accepts": 104
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 208.73293413173653,
+          "generator_tokens_per_sample": 131.303,
+          "verifier_tokens_per_sample": 42.989
+        },
+        "budget": {
+          "generator_ratio": 0.75
+        }
+      }
+    },
+    {
+      "input": "data\\experiments\\budget_sweep\\main\\gsm8k_r90.jsonl",
+      "overall": {
+        "data_quality": {
+          "n_total": 1000,
+          "n_valid": 1000,
+          "n_decided": 994
+        },
+        "system_performance": {
+          "system_accuracy_after_verification": 0.778672032193159,
+          "generator_accuracy": 0.836
+        },
+        "verification": {
+          "error_detection_rate": 0.4233128834355828,
+          "false_positive_rate": 0.5766871165644172,
+          "false_negative_rate": 0.15162454873646208,
+          "accept_rate": 0.8038229376257545,
+          "reject_rate": 0.19617706237424548,
+          "abstain_rate": 0.006,
+          "coverage": 0.994,
+          "acceptance_breakdown": {
+            "lazy_accept_rate": 0.094,
+            "correct_accepts": 705,
+            "false_rejects": 126,
+            "correct_rejections": 69,
+            "lazy_accepts": 94
+          }
+        },
+        "efficiency": {
+          "tokens_per_correct": 205.45215311004785,
+          "generator_tokens_per_sample": 131.031,
+          "verifier_tokens_per_sample": 40.727
+        },
+        "budget": {
+          "generator_ratio": 0.9
+        }
+      }
+    }
+  ]
+}

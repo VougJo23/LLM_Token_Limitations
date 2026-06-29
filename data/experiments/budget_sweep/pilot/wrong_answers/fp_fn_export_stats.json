@@ -1,0 +1,9 @@
+{
+  "n_files": 4,
+  "n_rows": 400,
+  "n_false_positives": 46,
+  "n_false_negatives": 22,
+  "n_skipped_missing_keys_or_abstain": 0,
+  "n_skipped_error_rows": 0,
+  "include_abstentions": false
+}

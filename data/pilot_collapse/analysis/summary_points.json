@@ -1,0 +1,24 @@
+﻿[
+  {
+    "dataset": "gsm8k",
+    "pilot_config": "pilot2_default",
+    "gen_config": "gen_medium",
+    "model": "gpt-4.1-mini",
+    "temperature": 0.0,
+    "verifier_ratio": 0.9,
+    "generator_max_tokens": 220,
+    "verifier_max_tokens": 144,
+    "generator_accuracy": 0.0,
+    "verifier_accuracy": 0.0,
+    "false_positive_rate": 0.0,
+    "false_negative_rate": 0.0,
+    "system_level_accuracy": 0.0,
+    "coverage": 0.0,
+    "acceptance_rate": 0.0,
+    "conditional_accuracy": 0.0,
+    "generator_truncation_rate": 0.0,
+    "verifier_truncation_rate": 0.0,
+    "summary_path": "data\\pilot2\\gsm8k_pilot2_default_gen_medium_vr90_summary.json",
+    "output_jsonl": "data\\pilot2\\gsm8k_pilot2_default_gen_medium_vr90.jsonl"
+  }
+]

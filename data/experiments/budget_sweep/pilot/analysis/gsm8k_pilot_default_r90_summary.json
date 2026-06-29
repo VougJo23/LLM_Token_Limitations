@@ -1,0 +1,157 @@
+﻿{
+  "meta": {
+    "dataset": "gsm8k",
+    "model": "gpt-4.1-mini",
+    "n_valid": 100
+  },
+  "budget": {
+    "generator_ratio": 0.9,
+    "per_difficulty": {
+      "hard": {
+        "total_max_tokens": 500,
+        "generator_ratio": 0.9,
+        "generator_max_tokens": 450,
+        "verifier_max_tokens": 50,
+        "verifier_min_tokens": 10,
+        "generator_reasoning_budget": 360,
+        "reasoning_budget_scale": 0.8
+      },
+      "medium": {
+        "total_max_tokens": 300,
+        "generator_ratio": 0.9,
+        "generator_max_tokens": 270,
+        "verifier_max_tokens": 30,
+        "verifier_min_tokens": 10,
+        "generator_reasoning_budget": 216,
+        "reasoning_budget_scale": 0.8
+      },
+      "easy": {
+        "total_max_tokens": 220,
+        "generator_ratio": 0.9,
+        "generator_max_tokens": 198,
+        "verifier_max_tokens": 22,
+        "verifier_min_tokens": 10,
+        "generator_reasoning_budget": 158,
+        "reasoning_budget_scale": 0.8
+      }
+    }
+  },
+  "performance": {
+    "overall": {
+      "generator_accuracy": 0.81,
+      "system_accuracy": 0.53,
+      "accuracy_delta": -0.28
+    },
+    "by_difficulty": {
+      "hard": {
+        "n": 30,
+        "generator_accuracy": 0.6666666666666666,
+        "system_accuracy": 0.43333333333333335,
+        "accuracy_delta": -0.23333333333333328,
+        "generator_truncation_rate": 0.03333333333333333,
+        "avg_generator_tokens_used": 168.23333333333332
+      },
+      "medium": {
+        "n": 35,
+        "generator_accuracy": 0.8857142857142857,
+        "system_accuracy": 0.5142857142857142,
+        "accuracy_delta": -0.37142857142857144,
+        "generator_truncation_rate": 0.02857142857142857,
+        "avg_generator_tokens_used": 150.4
+      },
+      "easy": {
+        "n": 35,
+        "generator_accuracy": 0.8571428571428571,
+        "system_accuracy": 0.6285714285714286,
+        "accuracy_delta": -0.22857142857142854,
+        "generator_truncation_rate": 0.14285714285714285,
+        "avg_generator_tokens_used": 138.22857142857143
+      }
+    }
+  },
+  "verification": {
+    "summary": {
+      "verifier_accuracy": 0.53,
+      "accept_rate": 0.42,
+      "reject_rate": 0.58,
+      "error_detection_rate": 0.7894736842105263,
+      "false_positive_rate": 0.21052631578947367,
+      "false_negative_rate": 0.5308641975308642
+    }
+  },
+  "token_usage": {
+    "generator": {
+      "mean_used": 151.49,
+      "utilization": 0.5514619528619529
+    },
+    "verifier": {
+      "mean_used": 2.58,
+      "utilization": 0.08613333333333334
+    }
+  },
+  "truncation": {
+    "generator_truncation_rate": 0.07,
+    "verifier_truncation_rate": 0.0,
+    "generator_accuracy_nontruncated": 0.8709677419354839
+  },
+  "confidence": {
+    "generator": {
+      "mean_token_prob_proxy": 0.9320120456343481
+    },
+    "verifier": {
+      "logprob_proxy": {
+        "mean": -0.027033795439664915
+      }
+    }
+  },
+  "confidence_linkage": {
+    "generator": {
+      "confidence_correct_gap": 0.032239034633973485,
+      "mean_conf_correct": 0.9381374622148031,
+      "mean_conf_incorrect": 0.9058984275808296
+    },
+    "verifier": {
+      "confidence_correct_gap": -0.011113086002341142,
+      "mean_conf_correct": -0.029145281780109732,
+      "mean_conf_incorrect": -0.01803219577776859
+    }
+  },
+  "discrimination": {
+    "generator": {
+      "auroc": 0.2599090318388564
+    },
+    "verifier": {
+      "auroc": 0.41000649772579595
+    }
+  },
+  "calibration": {
+    "generator": {
+      "brier": 0.1602534295509123,
+      "ece": 0.122012045634348
+    }
+  },
+  "decision_policy_simulation": {
+    "accept_top_k_percent": {
+      "k=10": {
+        "system_accuracy": 1.0,
+        "accept_rate": 0.1
+      },
+      "k=25": {
+        "system_accuracy": 0.84,
+        "accept_rate": 0.25
+      },
+      "k=50": {
+        "system_accuracy": 0.56,
+        "accept_rate": 0.5
+      },
+      "k=75": {
+        "system_accuracy": 0.4266666666666667,
+        "accept_rate": 0.75
+      },
+      "k=90": {
+        "system_accuracy": 0.3888888888888889,
+        "accept_rate": 0.9
+      }
+    }
+  }
+}

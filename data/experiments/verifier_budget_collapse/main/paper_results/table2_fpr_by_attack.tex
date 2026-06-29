@@ -1,0 +1,15 @@
+\begin{table}[t]
+\centering
+\caption{Mean false-positive rate (wrong answer accepted) by attack type, averaged over budget ratios. The mismatch column shows the cross-family dissociation: near-total for Qwen, near-zero for gpt-4.1-mini.}
+\label{tab:fpr_attack}
+\begin{tabular}{lrr}
+\toprule
+attack & Qwen2.5-7B & gpt-4.1-mini \\
+\midrule
+arithmetic & 0.167 & 0.084 \\
+assumption & 0.300 & 0.201 \\
+mismatch & 0.688 & 0.004 \\
+persuasive & 0.359 & 0.255 \\
+\bottomrule
+\end{tabular}
+\end{table}

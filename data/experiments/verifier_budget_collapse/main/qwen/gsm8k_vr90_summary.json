@@ -1,0 +1,65 @@
+{
+    "dataset": "gsm8k",
+    "model": "gpt-4.1-mini",
+    "model_provider": "openai",
+    "verifier_model": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "verifier_provider": "qwen",
+    "temperature": 0.0,
+    "n_total": 1000,
+    "n_valid": 1000,
+    "trunc_rate": 0.0,
+    "has_answer_rate": 1.0,
+    "complete_rate": 1.0,
+    "verifier_decisions": {
+        "CORRECT": 541,
+        "INCORRECT": 459,
+        "ABSTAIN": 0
+    },
+    "verifier_outputs_both_labels": true,
+    "generator_truncation_rate": 0.0,
+    "verifier_truncation_rate": 0.0,
+    "verifier_truncated_semantic_rate": 0.05,
+    "verifier_format_valid_rate": 0.95,
+    "verifier_has_verdict_rate": 1.0,
+    "verifier_preface_present_rate": 1.0,
+    "generator_accuracy": 0.31,
+    "verifier_accuracy": 0.675,
+    "lazy_accept_rate": 0.278,
+    "abstain_rate": 0.0,
+    "false_positive_rate": 0.4028985507246377,
+    "false_negative_rate": 0.15161290322580645,
+    "coverage": 1.0,
+    "acceptance_rate": 0.541,
+    "overall_accuracy": 0.675,
+    "system_level_accuracy": 0.675,
+    "budget": {
+        "verifier_ratio": 0.9,
+        "per_difficulty": {
+            "easy": {
+                "difficulty": "easy",
+                "total_max_tokens": 500,
+                "verifier_ratio": 0.9,
+                "verifier_max_tokens": 450,
+                "verifier_min_tokens": 10
+            },
+            "hard": {
+                "difficulty": "hard",
+                "total_max_tokens": 900,
+                "verifier_ratio": 0.9,
+                "verifier_max_tokens": 810,
+                "verifier_min_tokens": 15
+            },
+            "medium": {
+                "difficulty": "medium",
+                "total_max_tokens": 700,
+                "verifier_ratio": 0.9,
+                "verifier_max_tokens": 630,
+                "verifier_min_tokens": 12
+            }
+        }
+    },
+    "output": "data/experiments/verifier_budget_collapse/main/openai/gsm8k_vr90.jsonl",
+    "spurious_tp_count": 0,
+    "strict_tp_count": 263,
+    "spurious_tp_rate": 0.0
+}

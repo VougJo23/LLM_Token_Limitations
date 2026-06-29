@@ -1,0 +1,10 @@
+{
+  "truncation_frequency_vs_generator_budget": [],
+  "truncation_vs_correctness": {
+    "counts": {},
+    "p_correct_given_truncated": null,
+    "p_correct_given_not_truncated": null,
+    "n_truncated_rows": 0,
+    "n_not_truncated_rows": 0
+  }
+}

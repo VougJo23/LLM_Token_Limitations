@@ -1,0 +1,62 @@
+{
+  "dataset": "gsm8k",
+  "model": "gpt-4.1-mini",
+  "model_provider": "openai",
+  "verifier_model": "gpt-4.1-mini",
+  "verifier_provider": "openai",
+  "temperature": 0.0,
+  "n_total": 1000,
+  "n_valid": 1000,
+  "trunc_rate": 0.0,
+  "has_answer_rate": 1.0,
+  "complete_rate": 1.0,
+  "verifier_decisions": {
+    "CORRECT": 342,
+    "INCORRECT": 615,
+    "ABSTAIN": 43
+  },
+  "verifier_outputs_both_labels": true,
+  "generator_truncation_rate": 0.0,
+  "verifier_truncation_rate": 0.043,
+  "verifier_truncated_semantic_rate": 0.07,
+  "verifier_format_valid_rate": 0.93,
+  "verifier_has_verdict_rate": 0.987,
+  "verifier_preface_present_rate": 1.0,
+  "generator_accuracy": 0.31,
+  "verifier_accuracy": 0.859,
+  "lazy_accept_rate": 0.072,
+  "abstain_rate": 0.043,
+  "false_positive_rate": 0.10892586989409984,
+  "false_negative_rate": 0.08783783783783784,
+  "coverage": 0.957,
+  "acceptance_rate": 0.3573667711598746,
+  "overall_accuracy": 0.8339805825242719,
+  "system_level_accuracy": 0.8975966562173459,
+  "budget": {
+    "verifier_ratio": 0.45,
+    "per_difficulty": {
+      "easy": {
+        "difficulty": "easy",
+        "total_max_tokens": 500,
+        "verifier_ratio": 0.45,
+        "verifier_max_tokens": 225,
+        "verifier_min_tokens": 10
+      },
+      "hard": {
+        "difficulty": "hard",
+        "total_max_tokens": 900,
+        "verifier_ratio": 0.45,
+        "verifier_max_tokens": 405,
+        "verifier_min_tokens": 15
+      },
+      "medium": {
+        "difficulty": "medium",
+        "total_max_tokens": 700,
+        "verifier_ratio": 0.45,
+        "verifier_max_tokens": 315,
+        "verifier_min_tokens": 12
+      }
+    }
+  },
+  "output": "data/experiments/verifier_budget_collapse/main/openai/gsm8k_vr45.jsonl"
+}

@@ -1,0 +1,65 @@
+{
+    "dataset": "gsm8k",
+    "model": "gpt-4.1-mini",
+    "model_provider": "openai",
+    "verifier_model": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+    "verifier_provider": "qwen",
+    "temperature": 0.0,
+    "n_total": 1000,
+    "n_valid": 1000,
+    "trunc_rate": 0.0,
+    "has_answer_rate": 1.0,
+    "complete_rate": 1.0,
+    "verifier_decisions": {
+        "CORRECT": 542,
+        "INCORRECT": 453,
+        "ABSTAIN": 5
+    },
+    "verifier_outputs_both_labels": true,
+    "generator_truncation_rate": 0.0,
+    "verifier_truncation_rate": 0.005,
+    "verifier_truncated_semantic_rate": 0.048,
+    "verifier_format_valid_rate": 0.952,
+    "verifier_has_verdict_rate": 0.997,
+    "verifier_preface_present_rate": 1.0,
+    "generator_accuracy": 0.31,
+    "verifier_accuracy": 0.667,
+    "lazy_accept_rate": 0.281,
+    "abstain_rate": 0.005,
+    "false_positive_rate": 0.4090247452692867,
+    "false_negative_rate": 0.1525974025974026,
+    "coverage": 0.995,
+    "acceptance_rate": 0.5447236180904522,
+    "overall_accuracy": 0.6656686626746507,
+    "system_level_accuracy": 0.6703517587939698,
+    "budget": {
+        "verifier_ratio": 0.6,
+        "per_difficulty": {
+            "easy": {
+                "difficulty": "easy",
+                "total_max_tokens": 500,
+                "verifier_ratio": 0.6,
+                "verifier_max_tokens": 300,
+                "verifier_min_tokens": 10
+            },
+            "hard": {
+                "difficulty": "hard",
+                "total_max_tokens": 900,
+                "verifier_ratio": 0.6,
+                "verifier_max_tokens": 540,
+                "verifier_min_tokens": 15
+            },
+            "medium": {
+                "difficulty": "medium",
+                "total_max_tokens": 700,
+                "verifier_ratio": 0.6,
+                "verifier_max_tokens": 420,
+                "verifier_min_tokens": 12
+            }
+        }
+    },
+    "output": "data/experiments/verifier_budget_collapse/main/qwen/gsm8k_vr60.jsonl",
+    "spurious_tp_count": 0,
+    "strict_tp_count": 261,
+    "spurious_tp_rate": 0.0
+}

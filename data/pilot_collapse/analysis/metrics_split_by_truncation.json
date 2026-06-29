@@ -1,0 +1,60 @@
+{
+  "overall": {
+    "truncated": {
+      "n_total": 0,
+      "n_decided": 0,
+      "generator_accuracy": null,
+      "verifier_accuracy": null,
+      "lazy_accept_rate": null,
+      "abstain_rate": null,
+      "false_positive_rate": null,
+      "false_negative_rate": null,
+      "coverage": null,
+      "acceptance_rate": null,
+      "conditional_accuracy": null,
+      "system_level_accuracy": null,
+      "effective_acceptance_rate": null,
+      "verifier_has_verdict_rate": null,
+      "verifier_format_valid_rate": null,
+      "verifier_preface_present_rate": null,
+      "verifier_truncated_semantic_rate": null,
+      "verifier_preface_avg_word_count": null,
+      "counts": {
+        "correct_accepts": 0,
+        "false_rejects": 0,
+        "correct_rejections": 0,
+        "lazy_accepts": 0
+      }
+    },
+    "not_truncated": {
+      "n_total": 0,
+      "n_decided": 0,
+      "generator_accuracy": null,
+      "verifier_accuracy": null,
+      "lazy_accept_rate": null,
+      "abstain_rate": null,
+      "false_positive_rate": null,
+      "false_negative_rate": null,
+      "coverage": null,
+      "acceptance_rate": null,
+      "conditional_accuracy": null,
+      "system_level_accuracy": null,
+      "effective_acceptance_rate": null,
+      "verifier_has_verdict_rate": null,
+      "verifier_format_valid_rate": null,
+      "verifier_preface_present_rate": null,
+      "verifier_truncated_semantic_rate": null,
+      "verifier_preface_avg_word_count": null,
+      "counts": {
+        "correct_accepts": 0,
+        "false_rejects": 0,
+        "correct_rejections": 0,
+        "lazy_accepts": 0
+      }
+    }
+  },
+  "by_verifier_max_tokens": {
+    "truncated": {},
+    "not_truncated": {}
+  }
+}

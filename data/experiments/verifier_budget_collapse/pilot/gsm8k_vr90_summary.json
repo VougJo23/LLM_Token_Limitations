@@ -1,57 +1,60 @@
 {
   "dataset": "gsm8k",
-  "model": "gpt-4o-mini",
+  "model": "gpt-4.1-mini",
+  "model_provider": "qwen",
+  "verifier_model": "Qwen/Qwen2.5-7B-Instruct-Turbo",
+  "verifier_provider": "qwen",
   "temperature": 0.0,
   "n_total": 30,
   "n_valid": 30,
-  "trunc_rate": 0.16666666666666666,
-  "has_answer_rate": 0.8333333333333334,
-  "complete_rate": 0.8333333333333334,
+  "trunc_rate": 0.0,
+  "has_answer_rate": 1.0,
+  "complete_rate": 1.0,
   "verifier_decisions": {
-    "CORRECT": 2,
-    "INCORRECT": 28,
+    "CORRECT": 17,
+    "INCORRECT": 13,
     "ABSTAIN": 0
   },
   "verifier_outputs_both_labels": true,
-  "generator_truncation_rate": 0.16666666666666666,
+  "generator_truncation_rate": 0.0,
   "verifier_truncation_rate": 0.0,
-  "verifier_truncated_semantic_rate": 1.0,
-  "verifier_format_valid_rate": 0.0,
+  "verifier_truncated_semantic_rate": 0.43333333333333335,
+  "verifier_format_valid_rate": 0.5666666666666667,
   "verifier_has_verdict_rate": 1.0,
   "verifier_preface_present_rate": 1.0,
-  "generator_accuracy": 0.4666666666666667,
-  "verifier_accuracy": 0.4666666666666667,
-  "lazy_accept_rate": 0.06666666666666667,
+  "generator_accuracy": 0.26666666666666666,
+  "verifier_accuracy": 0.7,
+  "lazy_accept_rate": 0.3,
   "abstain_rate": 0.0,
-  "false_positive_rate": 0.125,
-  "false_negative_rate": 1.0,
+  "false_positive_rate": 0.4090909090909091,
+  "false_negative_rate": 0.0,
   "coverage": 1.0,
-  "acceptance_rate": 0.06666666666666667,
-  "overall_accuracy": 0.4666666666666667,
-  "system_level_accuracy": 0.4666666666666667,
+  "acceptance_rate": 0.5666666666666667,
+  "overall_accuracy": 0.7,
+  "system_level_accuracy": 0.7,
   "budget": {
     "verifier_ratio": 0.9,
     "per_difficulty": {
       "hard": {
         "difficulty": "hard",
-        "total_max_tokens": 256,
+        "total_max_tokens": 900,
         "verifier_ratio": 0.9,
-        "verifier_max_tokens": 230,
-        "verifier_min_tokens": 50
+        "verifier_max_tokens": 810,
+        "verifier_min_tokens": 15
       },
       "medium": {
         "difficulty": "medium",
-        "total_max_tokens": 192,
+        "total_max_tokens": 700,
         "verifier_ratio": 0.9,
-        "verifier_max_tokens": 172,
-        "verifier_min_tokens": 50
+        "verifier_max_tokens": 630,
+        "verifier_min_tokens": 12
       },
       "easy": {
         "difficulty": "easy",
-        "total_max_tokens": 128,
+        "total_max_tokens": 500,
         "verifier_ratio": 0.9,
-        "verifier_max_tokens": 115,
-        "verifier_min_tokens": 40
+        "verifier_max_tokens": 450,
+        "verifier_min_tokens": 10
       }
     }
   },

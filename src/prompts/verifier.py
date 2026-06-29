@@ -46,13 +46,14 @@ def build_verifier_prompt(
             Reason: <one short sentence>
             """
 
+
 def build_verifier_prompt_2(
     question,
     reasoning,
     answer,
     verifier_max_tokens=None,
 ):
-    budget_str = "unknown" if verifier_max_tokens is None else str(int(verifier_max_tokens) - 50)
+    budget_str = "unknown" if verifier_max_tokens is None else str(int(verifier_max_tokens) - 20)
 
     return f"""
         You are an elite, highly skeptical mathematical verifier.
@@ -73,7 +74,7 @@ def build_verifier_prompt_2(
         Output Format (Strictly adhere to this layout):
 
         <thinking>
-        [Mandatory: For each step in the proposed solution, write out your own independent calculation and point out any hidden flaws, subtle logical leaps, or arithmetic errors. Use your token budget fully here to investigate thoroughly.]
+        [Mandatory: For each numbered step in the trajectory, state your own calculation briefly. Keep descriptions ultra-short (1 sentence max per step) to fit within your token allocation and prevent truncation.]
         </thinking>
 
         Verification:
@@ -81,6 +82,13 @@ def build_verifier_prompt_2(
         2. VALID / INVALID
         ...
 
+        
+        Reason: <one short sentence summarizing the primary flaw or validation. Provide ONLY if verdict is INCORRECT.>
+        
         Verdict: CORRECT or INCORRECT
-        Reason: <one short sentence summarizing the primary flaw or validation>
+        
+        RULES:
+        - Output the structural fields ("Verification:", "Verdict:", "Reason:") exactly as shown above.
+        - Do not output any transition commentary before or after your block choices.
+        - If the Verdict is CORRECT, completely omit the "Reason:" line and end the output immediately at the word CORRECT.
     """

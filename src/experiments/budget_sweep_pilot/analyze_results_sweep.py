@@ -21,6 +21,51 @@ def _get_budget(r, key, default=None):
     b = r.get("budget", {})
     return b.get(key, r.get(key, default))
 
+def _sf(x):
+    """Safe float; rejects bools and non-numerics."""
+    if x is None or isinstance(x, bool):
+        return None
+    try:
+        return float(x)
+    except (TypeError, ValueError):
+        return None
+
+def _safe_mean(xs):
+    return (sum(xs) / len(xs)) if xs else None
+
+def calibration(rows, n_bins=10):
+    """Brier + ECE of the verifier's P(CORRECT) vs gold, plus confidence gap
+    (mean p_correct on correct minus on incorrect generations). Mirrors exp2."""
+    ps, ys = [], []
+    for r in rows:
+        g = _gold(r)
+        p = _sf(r.get("verifier_verdict_p_correct"))
+        if g is None or p is None:
+            continue
+        ps.append(min(1.0, max(0.0, p)))
+        ys.append(1.0 if g else 0.0)
+    n = len(ps)
+    if n == 0:
+        return {"n": 0, "brier": None, "ece": None,
+                "mean_conf_correct": None, "mean_conf_incorrect": None, "confidence_gap": None}
+    brier = sum((p - y) ** 2 for p, y in zip(ps, ys)) / n
+    bins = [[] for _ in range(n_bins)]
+    for i, p in enumerate(ps):
+        bins[min(int(p * n_bins), n_bins - 1)].append(i)
+    ece = 0.0
+    for idxs in bins:
+        if not idxs:
+            continue
+        conf = sum(ps[i] for i in idxs) / len(idxs)
+        acc = sum(ys[i] for i in idxs) / len(idxs)
+        ece += (len(idxs) / n) * abs(acc - conf)
+    correct = [p for p, y in zip(ps, ys) if y == 1.0]
+    incorrect = [p for p, y in zip(ps, ys) if y == 0.0]
+    mc, mi = _safe_mean(correct), _safe_mean(incorrect)
+    return {"n": n, "brier": float(brier), "ece": float(ece),
+            "mean_conf_correct": mc, "mean_conf_incorrect": mi,
+            "confidence_gap": (mc - mi) if (mc is not None and mi is not None) else None}
+
 def deep_search(data, target_keys):
     if isinstance(data, dict):
         for k, v in data.items():
@@ -88,7 +133,14 @@ def calculate_metrics(valid, decided, rng):
 
     fpr_denom = lazy_accepts + correct_rejections
     fnr_denom = false_rejects + correct_accepts
-    accuracy = (correct_accepts + correct_rejections) / len(decided) if decided else 0.0
+    cond_ver_acc = (correct_accepts + correct_rejections) / len(decided) if decided else 0.0
+    global_sys_acc = (correct_accepts + correct_rejections) / len(valid) if valid else 0.0
+    gen_acc = _safe_mean([1.0 if _gold(r) else 0.0 for r in valid if _gold(r) is not None])
+
+    # Deception success (three-way on incorrect generations; success+caught+abstain = 1)
+    abstain_incorrect = sum(1 for r in valid if _gold(r) is False and r.get("verifier_decision") is None)
+    n_wrong = lazy_accepts + correct_rejections + abstain_incorrect
+    n_wrong_decided = lazy_accepts + correct_rejections
 
     gen_tokens = [r.get("completion_tokens", 0) for r in valid]
     trunc_missing_steps = sum(1 for r in valid if r.get("verifier_truncated") and not r.get("step_judgments"))
@@ -99,7 +151,8 @@ def calculate_metrics(valid, decided, rng):
     mismatch_count = 0
     answer_missing_count = 0
     for r in valid:
-        all_steps_valid = r.get("total_steps", 0) > 0 and r.get("n_invalid_steps", 0) == 0
+        n_invalid = r.get("n_invalid", r.get("n_invalid_steps", 0))  # run_pilot writes "n_invalid"
+        all_steps_valid = r.get("total_steps", 0) > 0 and n_invalid == 0
         answer_missing = r.get("truncated") or not r.get("predicted_answer")
         if answer_missing:
             answer_missing_count += 1
@@ -116,13 +169,26 @@ def calculate_metrics(valid, decided, rng):
     return {
         "data_quality": {"n_valid": len(valid), "n_decided": len(decided)},
         "performance": {
-            "generator_accuracy": mean([_gold(r) for r in valid]) if valid else 0.0,
-            "system_accuracy": accuracy,
-            "verifier_accuracy": accuracy,
+            "generator_accuracy": gen_acc,
+            "system_accuracy_valid": global_sys_acc,        # (tp+tn)/n_valid; abstentions penalized
+            "system_accuracy_decided": cond_ver_acc,        # (tp+tn)/n_decided; conditional on a verdict
             "error_detection_rate": correct_rejections / fpr_denom if fpr_denom else 0.0,
             "false_positive_rate": lazy_accepts / fpr_denom if fpr_denom else 0.0,
-            "false_negative_rate": false_rejects / fnr_denom if fnr_denom else 0.0
+            "false_negative_rate": false_rejects / fnr_denom if fnr_denom else 0.0,
+            # backward-compatible aliases (identical numbers; keeps existing plot code working):
+            "global_system_accuracy": global_sys_acc,
+            "conditional_verifier_accuracy": cond_ver_acc,
         },
+        "deception": {
+            "n_wrong": n_wrong,
+            "n_wrong_decided": n_wrong_decided,
+            "deception_success_rate": lazy_accepts / n_wrong if n_wrong else None,
+            "deception_success_rate_decided": lazy_accepts / n_wrong_decided if n_wrong_decided else None,
+            "error_caught_rate": correct_rejections / n_wrong if n_wrong else None,
+            "abstain_rate_wrong": abstain_incorrect / n_wrong if n_wrong else None,
+            "coverage_wrong": n_wrong_decided / n_wrong if n_wrong else None,
+        },
+        "calibration": calibration(valid),
         "signal_detection": compute_sdt(gold_arr, accept_arr, rng),
         "tokens": {
             "mean_gen_tokens": mean(gen_tokens) if gen_tokens else 0,
@@ -274,7 +340,8 @@ def main():
     plot_data_vratio = {round(1.0 - r, 4): data for r, data in plot_data_ratio.items()}
 
     # Plots grouped by Generator Ratio
-    plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["performance"]["system_accuracy"], "System Accuracy vs Gen Ratio", "Accuracy", out_dir / "sys_acc_vs_gen_ratio.png")
+    plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["performance"]["global_system_accuracy"], "Global System Accuracy vs Gen Ratio", "Accuracy", out_dir / "sys_acc_vs_gen_ratio.png")
+    #plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["performance"]["system_accuracy"], "System Accuracy vs Gen Ratio", "Accuracy", out_dir / "sys_acc_vs_gen_ratio.png")
     plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["performance"]["generator_accuracy"], "Generator Accuracy vs Gen Ratio", "Accuracy", out_dir / "gen_acc_vs_gen_ratio.png")
     plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["truncation"]["total_truncated"] / d["all_decided"]["data_quality"]["n_valid"] if d["all_decided"]["data_quality"]["n_valid"] else 0, "Truncation Rate vs Gen Ratio", "Truncation Rate", out_dir / "truncation_vs_gen_ratio.png")
     plot_metric(plot_data_ratio, "Generator Ratio", lambda d: d["all_decided"]["signal_detection"]["d_prime"], "Verifier d' vs Gen Ratio", "d'", out_dir / "dprime_vs_gen_ratio.png", ci_func=lambda d: d["all_decided"]["signal_detection"]["d_prime_ci95"])

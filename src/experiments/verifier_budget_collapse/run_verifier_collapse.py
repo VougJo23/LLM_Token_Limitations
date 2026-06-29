@@ -223,13 +223,16 @@ def compute_summary(dataset, model, temperature, verifier_ratio, rows, output_js
 
 async def run_generator_async(dataset, input_path, prompt_builder, parse_generation, evaluator,
                                 model, temperature, limit, save_every, out_path, concurrency,
-                                provider="openai"):
+                                provider="openai", items_override=None):
     sem = asyncio.Semaphore(concurrency)
     batch_size = max(10, concurrency * 5)
-    items = [item for idx, item in enumerate(load_jsonl(input_path)) if limit is None or idx < limit]
 
-    if dataset == "gsm8k":
-        assign_balanced_attack_types(items)
+    if items_override is not None:
+        items = list(items_override)
+    else:
+        items = [item for idx, item in enumerate(load_jsonl(input_path)) if limit is None or idx < limit]
+        if dataset == "gsm8k":
+            assign_balanced_attack_types(items)
 
     async def process_one(item):
         difficulty = item.get("difficulty", "medium")
@@ -382,7 +385,7 @@ async def run_verifier_async(dataset, generator_rows, question_by_id, gen_cache_
 def run_pilot2(*, datasets, model, temperature, limit, output_dir,
                save_every=25, verifier_ratios=None, concurrency=1, reuse_generator_cache=False,
                verifier_model=None, input_file=None,
-               generator_provider="openai", verifier_provider="openai"):
+               generator_provider="openai", verifier_provider="openai", fill_cache=False):
     verifier_ratios = verifier_ratios or list(CONFIGS2["medium"]["verifier_ratios"])
     concurrency = max(1, int(concurrency))
 
@@ -400,12 +403,39 @@ def run_pilot2(*, datasets, model, temperature, limit, output_dir,
             if qid is not None:
                 question_by_id.setdefault(qid, str(item.get("question") or ""))
 
-        gen_cache_path = f"{output_dir}/{dataset}_generator.jsonl"
+        gen_cache_dir = Path(output_dir).resolve().parent
+        gen_cache_path = str(gen_cache_dir / f"{dataset}_generator.jsonl")
 
         if reuse_generator_cache and Path(gen_cache_path).exists():
             allowed = set(question_by_id)
-            generator_rows = [r for r in load_jsonl(gen_cache_path) if r.get("id") in allowed]
-            print(f"[{dataset}] reusing generator cache ({len(generator_rows)} rows)")
+
+            if fill_cache:
+                all_items = [item for idx, item in enumerate(load_jsonl(input_path)) if limit is None or idx < limit]
+                if dataset == "gsm8k":
+                    assign_balanced_attack_types(all_items)
+
+                cached_rows = list(load_jsonl(gen_cache_path))
+                cached_ids = {r.get("id") for r in cached_rows if r.get("id") in allowed}
+                missing = [item for item in all_items if item.get("id") not in cached_ids]
+
+                if missing:
+                    print(f"[{dataset}] cache has {len(cached_rows)} rows, generating {len(missing)} missing items")
+                    new_rows = asyncio.run(run_generator_async(
+                        dataset, None, prompt_builder, parse_generation, evaluator,
+                        model, temperature, limit, save_every, gen_cache_path, concurrency,
+                        provider=generator_provider, items_override=missing,
+                    ))
+                    all_rows = list(cached_rows) + new_rows
+                    all_rows.sort(key=lambda r: str(r.get("id", "")))
+                    save_jsonl(all_rows, gen_cache_path)
+                    generator_rows = all_rows
+                    print(f"[{dataset}] merged cache now has {len(generator_rows)} rows")
+                else:
+                    print(f"[{dataset}] all items already in cache ({len(cached_rows)} rows)")
+                    generator_rows = cached_rows
+            else:
+                generator_rows = [r for r in load_jsonl(gen_cache_path) if r.get("id") in allowed]
+                print(f"[{dataset}] reusing generator cache ({len(generator_rows)} rows)")
         else:
             generator_rows = asyncio.run(run_generator_async(
                 dataset, input_path, prompt_builder, parse_generation, evaluator,
@@ -444,25 +474,29 @@ def parse_args():
     p.add_argument("--datasets", nargs="+", default=["gsm8k", "strategyqa", "truthfulqa"])
     p.add_argument("--verifier-ratios", type=float, nargs="+", default=None)
     p.add_argument("--model", default="gpt-4.1-mini")
-    p.add_argument("--verifier-model", default="gpt-4o")
+    p.add_argument("--verifier-model", default="gpt-4.1-mini")
     p.add_argument("--temperature", type=float, default=0.0)
     p.add_argument("--limit", type=int, default=None)
     p.add_argument("--output-dir", default="data/pilot2")
     p.add_argument("--save-every", type=int, default=25)
     p.add_argument("--concurrency", type=int, default=1)
     p.add_argument("--reuse-generator-cache", action="store_true")
+    p.add_argument("--fill-cache", action="store_true",
+                   help="When used with --reuse-generator-cache, generate only items missing from cache and merge")
     p.add_argument("--input-file", default=None, help="Override input JSONL path per dataset (e.g. a specific sample file)")
-    p.add_argument("--generator-provider", default="qwen", choices=["openai", "qwen", "llama"],
-                   help="API provider for the generator model (default: openai)")
+    p.add_argument("--generator-provider", default="openai", choices=["openai", "qwen", "llama"],
+                   help="API provider for the generator model (default: qwen)")
     p.add_argument("--verifier-provider", default="qwen", choices=["openai", "qwen", "llama"],
-                   help="API provider for the verifier model (default: openai)")
+                   help="API provider for the verifier model (default: qwen)")
     return p.parse_args()
 
 
 if __name__ == "__main__":
     t0 = time.perf_counter()
     args = parse_args()
-    if args.verifier_provider == "qwen":
+    if args.verifier_provider == "openai":
+        args.verifier_model = "gpt-4.1-mini"
+    elif args.verifier_provider == "qwen":
         args.verifier_model = "Qwen/Qwen2.5-7B-Instruct-Turbo"
     elif args.verifier_provider == "llama":
         args.verifier_model = "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo"
@@ -476,6 +510,7 @@ if __name__ == "__main__":
         verifier_ratios=args.verifier_ratios,
         concurrency=args.concurrency,
         reuse_generator_cache=args.reuse_generator_cache,
+        fill_cache=args.fill_cache,
         verifier_model=args.verifier_model,
         input_file=args.input_file,
         generator_provider=args.generator_provider,

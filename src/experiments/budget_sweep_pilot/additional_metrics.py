@@ -8,10 +8,8 @@ def process_folder(folder_path: str):
     if not folder.is_dir():
         print(f"Error: The path '{folder_path}' is not a valid directory.")
         return
-
-    # Find all .jsonl files in the folder
-    jsonl_files = list(folder.glob("*.jsonl"))
     
+    jsonl_files = list(folder.glob("*.jsonl"))
     if not jsonl_files:
         print(f"No .jsonl files found in {folder_path}")
         return
@@ -21,7 +19,6 @@ def process_folder(folder_path: str):
     for p in jsonl_files:
         print(f"Processing {p.name}...")
         
-        # 1. Read existing JSONL
         with open(p, 'r', encoding='utf-8') as f:
             lines = f.readlines()
         
@@ -29,7 +26,6 @@ def process_folder(folder_path: str):
         mismatch_count = 0
         valid_count = 0
 
-        # Process each row
         for line in lines:
             if not line.strip():
                 continue
@@ -56,15 +52,12 @@ def process_folder(folder_path: str):
             
             updated_rows.append(row)
 
-        # Write updated rows back to the SAME .jsonl file (In-place update)
         with open(p, 'w', encoding='utf-8') as f:
             for row in updated_rows:
                 f.write(json.dumps(row, ensure_ascii=False) + '\n')
                 
         print(f"  ✓ Updated JSONL data.")
 
-        # 2. Find and update the corresponding summary JSON
-        # e.g., if p.stem is "gsm8k_r30", summary should be "gsm8k_r30_summary.json"
         summary_filename = f"{p.stem}_summary.json"
         summary_path = p.with_name(summary_filename)
         
@@ -73,14 +66,12 @@ def process_folder(folder_path: str):
                 summary = json.load(f)
             
             rate = mismatch_count / valid_count if valid_count > 0 else 0.0
-            
-            # Inject the rate
+
             if "verification" in summary and "step_level" in summary["verification"]:
                 summary["verification"]["step_level"]["process_outcome_mismatch_rate"] = rate
             else:
                 summary["process_outcome_mismatch_rate"] = rate
             
-            # Write updated summary back to the SAME .json file (In-place update)
             with open(summary_path, 'w', encoding='utf-8') as f:
                 json.dump(summary, f, ensure_ascii=False, indent=2)
                 

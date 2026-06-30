@@ -247,6 +247,223 @@ def plot_criterion_by_difficulty(merged_data, out_dir):
     _bar_plot_by_difficulty(merged_data, out_dir, "c", "c", "fig_criterion_by_difficulty.png")
 
 
+PAPER_TABLE_DIR = Path("data/experiments/budget_sweep/main")
+
+
+def _write_paper_table(rows, col_groups, col_spec, r_fmt=".2f"):
+    n_cols = sum(len(cols) for _, cols in col_groups)
+    group_headers = []
+    cmidrules = []
+    sub_headers = ["$R$"]
+    idx = 2
+    for label, cols in col_groups:
+        n = len(cols)
+        group_headers.append(f"\\multicolumn{{{n}}}{{c}}{{{label}}}")
+        cmidrules.append(f"\\cmidrule(lr){{{idx}-{idx + n - 1}}}")
+        for col_key, _ in cols:
+            sub_headers.append(f"\\textsc{{{col_key.split('_')[-1]}}}")
+        idx += n
+
+    lines = [
+        f"\\begin{{tabular}}{{{col_spec}}}",
+        "\\toprule",
+        "  & " + " & ".join(group_headers) + " \\\\",
+        "  " + " ".join(cmidrules),
+        " & ".join(sub_headers) + " \\\\",
+        "\\midrule",
+    ]
+    for r in rows:
+        vals = [f"{r['ratio']:{r_fmt}}"]
+        for _, cols in col_groups:
+            for col_key, fmt in cols:
+                vals.append(f"{r[col_key]:{fmt}}")
+        lines.append(" & ".join(vals) + " \\\\")
+
+    lines.extend(["\\bottomrule", "\\end{tabular}"])
+    return "\n".join(lines) + "\n"
+
+
+def _export_exp1_accuracy(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    table = _write_paper_table(
+        df.to_dict("records"),
+        [
+            ("Gen Accuracy", [("gen_acc_openai", ".2f")]),
+            ("Ver Accuracy", [("ver_acc_openai", ".2f"), ("ver_acc_qwen", ".2f")]),
+            ("Mean Gen Length", [("mean_gen_len_openai", ".2f"), ("mean_gen_len_qwen", ".2f")]),
+        ],
+        col_spec="lccccc",
+    )
+    path = paper_dir / "table_exp1_accuracy.tex"
+    with open(path, "w") as f:
+        f.write(table)
+    print(f"Wrote table to {path}")
+
+
+def _export_exp1_performance(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    table = _write_paper_table(
+        df.to_dict("records"),
+        [
+            ("FNR", [("fnr_openai", ".3f"), ("fnr_qwen", ".3f")]),
+            ("FPR", [("fpr_openai", ".3f"), ("fpr_qwen", ".3f")]),
+            ("Mismatch Rate", [("process_outcome_mismatch_rate_openai", ".3f"),
+                               ("process_outcome_mismatch_rate_qwen", ".3f")]),
+            ("EDR", [("edr_openai", ".3f"), ("edr_qwen", ".3f")]),
+        ],
+        col_spec="lrrrrrrrr",
+        r_fmt=".3f",
+    )
+    path = paper_dir / "table_exp1_performance.tex"
+    with open(path, "w") as f:
+        f.write(table)
+    print(f"Wrote table to {path}")
+
+
+def _export_exp1_trunc_verdicts(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    table = _write_paper_table(
+        df.to_dict("records"),
+        [
+            ("Total Truncated", [("gen_trunc_total_openai", ".0f"),
+                                 ("gen_trunc_total_qwen", ".0f")]),
+            ("Rejected", [("gen_trunc_reject_openai", ".0f"),
+                          ("gen_trunc_reject_qwen", ".0f")]),
+            ("Accepted", [("gen_trunc_accept_openai", ".0f"),
+                          ("gen_trunc_accept_qwen", ".0f")]),
+            ("No Verdict", [("gen_trunc_no_verdict_openai", ".0f"),
+                            ("gen_trunc_no_verdict_qwen", ".0f")]),
+        ],
+        col_spec="lrrrrrrrr",
+    )
+    path = paper_dir / "table_exp1_trunc_verdicts.tex"
+    with open(path, "w") as f:
+        f.write(table)
+    print(f"Wrote table to {path}")
+
+
+def _export_exp1_coverage(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    table = _write_paper_table(
+        df.to_dict("records"),
+        [
+            ("Truncated", [("n_trunc_openai", ".0f"), ("n_trunc_qwen", ".0f")]),
+            ("No Verdict", [("n_no_verdict_openai", ".0f"),
+                            ("n_no_verdict_qwen", ".0f")]),
+            ("Decided", [("n_decided_openai", ".0f"), ("n_decided_qwen", ".0f")]),
+        ],
+        col_spec="lrrrrrr",
+    )
+    path = paper_dir / "table_exp1_coverage.tex"
+    with open(path, "w") as f:
+        f.write(table)
+    print(f"Wrote table to {path}")
+
+
+# --- Appendix table exports ---
+
+def _fmt_or_dash(val, fmt):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return "---"
+    return f"{val:{fmt}}"
+
+
+def _c_fmt(val):
+    if val is None or (isinstance(val, float) and np.isnan(val)):
+        return "---"
+    s = f"{val:.2f}"
+    if s.startswith("-"):
+        return r"$-$" + s[1:]
+    return s
+
+
+def _export_exp1_appx_overview(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    lines = [
+        r"\begin{tabular}{lrrrrrrrrr}",
+        r"\toprule",
+        r"\multirow{2}{*}{$R$} &"
+        r" \multicolumn{2}{c}{gen acc} &"
+        r" \multicolumn{2}{c}{ver acc} &"
+        r" \multicolumn{2}{c}{$d'$} &"
+        r" \multicolumn{2}{c}{$c$} &"
+        r" \multirow{2}{*}{EDR} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}",
+        r" & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & \\",
+        r"\midrule",
+    ]
+    for _, r in df.iterrows():
+        lines.append(
+            f"{r['ratio']:.2f} & {r['gen_acc_openai']:.3f} & {r['gen_acc_qwen']:.3f} & "
+            f"{r['ver_acc_openai']:.3f} & {r['ver_acc_qwen']:.3f} & "
+            f"{r['d_prime_openai']:.2f} & {r['d_prime_qwen']:.2f} & "
+            f"{_c_fmt(r['c_score_openai'])} & {_c_fmt(r['c_score_qwen'])} & "
+            f"{r['edr_openai']:.3f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = paper_dir / "table_exp1_appx_overview.tex"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote {path}")
+
+
+def _export_exp1_appx_truncation(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    lines = [
+        r"\begin{tabular}{lrrrrrrrrr}",
+        r"\toprule",
+        r"\multirow{2}{*}{$R$} &"
+        r" \multicolumn{2}{c}{trunc gen} &"
+        r" \multicolumn{2}{c}{reject} &"
+        r" \multicolumn{2}{c}{accept} &"
+        r" \multicolumn{2}{c}{no verdict} &"
+        r" \multirow{2}{*}{\% trunc} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}",
+        r" & O & Q & O & Q & O & Q & O & Q & \\",
+        r"\midrule",
+    ]
+    for _, r in df.iterrows():
+        tot = r['gen_trunc_total_openai']
+        pct = tot / 1000.0 * 100
+        lines.append(
+            f"{r['ratio']:.2f} & {r['gen_trunc_total_openai']:.0f} & {r['gen_trunc_total_qwen']:.0f} & "
+            f"{r['gen_trunc_reject_openai']:.0f} & {r['gen_trunc_reject_qwen']:.0f} & "
+            f"{r['gen_trunc_accept_openai']:.0f} & {r['gen_trunc_accept_qwen']:.0f} & "
+            f"{r['gen_trunc_no_verdict_openai']:.0f} & {r['gen_trunc_no_verdict_qwen']:.0f} & "
+            f"{pct:.1f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = paper_dir / "table_exp1_appx_truncation.tex"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote {path}")
+
+
+def _export_exp1_appx_extra(df_wide, paper_dir):
+    df = df_wide.sort_values("ratio")
+    lines = [
+        r"\begin{tabular}{lrrrrrrrrr}",
+        r"\toprule",
+        r"\multirow{2}{*}{$R$} &"
+        r" \multicolumn{2}{c}{POM} &"
+        r" \multicolumn{2}{c}{FPR} &"
+        r" \multicolumn{2}{c}{FNR} &"
+        r" \multicolumn{2}{c}{EDR (complete)} &"
+        r" \multirow{2}{*}{$N_{\text{decided}}$} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}",
+        r" & O & Q & O & Q & O & Q & O & Q & \\",
+        r"\midrule",
+    ]
+    for _, r in df.iterrows():
+        lines.append(
+            f"{r['ratio']:.2f} & "
+            f"{r['process_outcome_mismatch_rate_openai']:.3f} & {r['process_outcome_mismatch_rate_qwen']:.3f} & "
+            f"{r['fpr_openai']:.3f} & {r['fpr_qwen']:.3f} & "
+            f"{r['fnr_openai']:.3f} & {r['fnr_qwen']:.3f} & "
+            f"{_fmt_or_dash(r['edr_openai'], '.3f')} & {_fmt_or_dash(r['edr_qwen'], '.3f')} & "
+            f"{r['n_decided_openai']:.0f}/{r['n_decided_qwen']:.0f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    path = paper_dir / "table_exp1_appx_extra.tex"
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    print(f"Wrote {path}")
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--files", nargs='+', required=True, help="List of specific master_report files")
@@ -320,6 +537,15 @@ def main():
         "gen_trunc_no_verdict_openai", "gen_trunc_no_verdict_qwen"
     ]].to_latex(out_dir / "table_gen_truncation.tex", index=False)
     
+    PAPER_TABLE_DIR.mkdir(parents=True, exist_ok=True)
+    _export_exp1_accuracy(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_performance(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_trunc_verdicts(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_coverage(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_appx_overview(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_appx_truncation(df_wide, PAPER_TABLE_DIR)
+    _export_exp1_appx_extra(df_wide, PAPER_TABLE_DIR)
+
     plot_truncation_vs_fpr(merged_data, out_dir)
     plot_criterion_trajectory(merged_data, out_dir)
     plot_sensitivity_leniency_dual(merged_data, out_dir)

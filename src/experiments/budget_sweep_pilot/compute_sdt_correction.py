@@ -101,12 +101,10 @@ def compute():
 
         decided = [r for r in traces if r.get("verifier_decision") is not None and _gold(r) is not None]
 
-        #  raw SDT 
         gold_raw = np.array([_gold(r) for r in decided], dtype=bool)
         accept = np.array([r["verifier_decision"] for r in decided], dtype=bool)
         raw = _sdt_with_ci(gold_raw, accept)
 
-        #  collect FP/FN records 
         for r in decided:
             g = _gold(r)
             vd = r["verifier_decision"]
@@ -125,13 +123,12 @@ def compute():
                     "difficulty": r.get("budget", {}).get("difficulty", ""),
                 })
 
-        #  corrected SDT: reclassify accepted mismatches 
+        #  corrected SDT
         gold_corr = gold_raw.copy()
         n_reclassified = 0
         for i, r in enumerate(decided):
             is_mismatch = r.get("process_outcome_mismatch", False) is True
             verifier_accepted = r["verifier_decision"] is True
-            # Use == not 'is' because gold_raw is a numpy array (np.bool_)
             gold_is_false = not bool(gold_raw[i])
             if is_mismatch and verifier_accepted and gold_is_false:
                 gold_corr[i] = True
@@ -150,7 +147,7 @@ def compute():
               f"c {raw['c']:.3f} -> {corr['c']:.3f}, "
               f"FPR {raw['fpr']:.3f} -> {corr['fpr']:.3f})")
 
-    #  write sorted FP/FN 
+
     def write_sorted(records, filename):
         records.sort(key=lambda x: (x["ratio"], x["model"]))
         path = OUT_DIR / filename
@@ -182,7 +179,7 @@ def compute():
                         c["n_pos"], c["n_neg"]])
     print(f"Wrote CSV to {csv_path}")
 
-    #  build LaTeX table 
+
     by_ratio = {}
     for res in results:
         r = res["ratio"]
@@ -194,7 +191,7 @@ def compute():
 
     def fmt_val(v):
         if v is None:
-            return ""
+            return "---"
         return f"{v:.2f}"
 
     lines = []
@@ -209,8 +206,8 @@ def compute():
                  r" \multicolumn{2}{c}{FPR$_c$} \\")
     lines.append(r"  \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}"
                  r" \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}")
-    lines.append(r"  & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI"
-                 r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\")
+    lines.append(r"  & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen"
+                 r" & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen \\")
     lines.append(r"\midrule")
 
     for ratio in sorted_ratios:
@@ -222,12 +219,12 @@ def compute():
 
         vals = [
             f"{ratio:.2f}",
-            fmt_val(qo.get("d")), fmt_val(ro.get("d")),
-            fmt_val(qc.get("d")), fmt_val(rc.get("d")),
-            fmt_val(qo.get("c")), fmt_val(ro.get("c")),
-            fmt_val(qc.get("c")), fmt_val(rc.get("c")),
-            fmt_val(qo.get("fpr")), fmt_val(ro.get("fpr")),
-            fmt_val(qc.get("fpr")), fmt_val(rc.get("fpr")),
+            fmt_val(ro.get("d")), fmt_val(qo.get("d")),
+            fmt_val(rc.get("d")), fmt_val(qc.get("d")),
+            fmt_val(ro.get("c")), fmt_val(qo.get("c")),
+            fmt_val(rc.get("c")), fmt_val(qc.get("c")),
+            fmt_val(ro.get("fpr")), fmt_val(qo.get("fpr")),
+            fmt_val(rc.get("fpr")), fmt_val(qc.get("fpr")),
         ]
         line = "  " + " & ".join(vals) + r" \\"
         lines.append(line)
@@ -286,12 +283,13 @@ def compute():
                      r" & \multicolumn{2}{c}{Easy} & \multicolumn{2}{c}{Med} & \multicolumn{2}{c}{Hard} \\")
         lines.append(r"  \cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}"
                      r" \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}")
-        lines.append(f"  & {met_label}_o & {met_label}_c"
-                     f" & {met_label}_o & {met_label}_c"
-                     f" & {met_label}_o & {met_label}_c"
-                     f" & {met_label}_o & {met_label}_c"
-                     f" & {met_label}_o & {met_label}_c"
-                     f" & {met_label}_o & {met_label}_c \\\\")
+        base = met_label.strip("$")
+        lines.append(f"  & ${base}_o$ & ${base}_c$"
+                     f" & ${base}_o$ & ${base}_c$"
+                     f" & ${base}_o$ & ${base}_c$"
+                     f" & ${base}_o$ & ${base}_c$"
+                     f" & ${base}_o$ & ${base}_c$"
+                     f" & ${base}_o$ & ${base}_c$ \\\\")
         lines.append(r"\midrule")
 
         for ratio in sorted_ratios:

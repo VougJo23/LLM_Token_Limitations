@@ -391,19 +391,7 @@ The results can be viewed in Table 4.1. The two agents are locked in a strict ze
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lccccc}
-\toprule
-& \multicolumn{1}{c}{Gen Accuracy} & \multicolumn{2}{c}{Ver Accuracy} & \multicolumn{2}{c}{Mean Gen Length} \\
-\cmidrule(lr){2-2} \cmidrule(lr){3-4} \cmidrule(lr){5-6}
-$R$ & \textsc{openai} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} \\
-\midrule
-0.30 & 0.15 & 0.96 & 0.89 & 57.05 & 57.12 \\
-0.45 & 0.42 & 0.91 & 0.85 & 77.74 & 77.71 \\
-0.60 & 0.66 & 0.87 & 0.86 & 89.12 & 88.73 \\
-0.75 & 0.78 & 0.88 & 0.85 & 96.02 & 95.94 \\
-0.90 & 0.84 & 0.85 & 0.81 & 99.71 & 99.87 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_accuracy.tex}
 \caption{Comparison of Generator and Verifier Metrics across Budget Ratios. Gen acc, ver acc, and mean gen length per ratio per model using the formulas in \S\ref{sec:metrics}.}
 \label{tab:accuracy_metrics}
 \end{table}
@@ -433,19 +421,7 @@ the accepted minority becomes this artefact.
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lrrrrrrrr}
-\toprule
- & \multicolumn{2}{c}{FNR} & \multicolumn{2}{c}{FPR} & \multicolumn{2}{c}{Mismatch Rate} & \multicolumn{2}{c}{EDR} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
-$R$ & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} \\
-\midrule
-0.300 & 0.027 & 0.071 & 0.045 & 0.115 & 0.446 & 0.343 & 0.955 & 0.885 \\
-0.450 & 0.024 & 0.058 & 0.138 & 0.220 & 0.373 & 0.201 & 0.862 & 0.780 \\
-0.600 & 0.038 & 0.063 & 0.304 & 0.288 & 0.208 & 0.082 & 0.696 & 0.712 \\
-0.750 & 0.026 & 0.069 & 0.577 & 0.460 & 0.108 & 0.039 & 0.423 & 0.540 \\
-0.900 & 0.014 & 0.108 & 0.854 & 0.800 & 0.059 & 0.055 & 0.146 & 0.200 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_performance.tex}
 \caption{Performance metrics by model and ratio. FNR, FPR, mismatch rate, and EDR per ratio per model from \S\ref{sec:metrics}.}
 \label{tab:performance_metrics}
 \end{table}
@@ -453,19 +429,7 @@ $R$ & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \texts
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lrrrrrrrr}
-\toprule
- & \multicolumn{2}{c}{Total Truncated} & \multicolumn{2}{c}{Rejected} & \multicolumn{2}{c}{Accepted} & \multicolumn{2}{c}{No Verdict} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
-$R$ & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} \\
-\midrule
-0.30 & 835 & 832 & 807 & 739 & 27 & 86 & 1 & 7 \\
-0.45 & 550 & 550 & 484 & 440 & 63 & 96 & 3 & 14 \\
-0.60 & 266 & 261 & 216 & 213 & 42 & 36 & 8 & 12 \\
-0.75 & 126 & 123 & 55 & 91 & 17 & 19 & 54 & 13 \\
-0.90 & 59 & 70 & 0 & 0 & 0 & 0 & 59 & 70 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_trunc_verdicts.tex}
 \caption{Truncation verdicts by model and ratio. Raw counts of generator-truncated traces per ratio per model, with the verifier's ruling on each stub.}
 \label{tab:truncation_verdicts}
 \end{table}
@@ -532,19 +496,7 @@ $d'_c$, $c_c$, and FPR$_c$ reclassify accepted process-outcome mismatch traces
 \begin{table}[H]
 \centering
 \small
-\begin{tabular}{lrrrrrr}
-\toprule
- & \multicolumn{2}{c}{Truncated} & \multicolumn{2}{c}{No Verdict} & \multicolumn{2}{c}{Decided} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-$R$ & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} \\
-\midrule
-0.30 & 5 & 19 & 0 & 5 & 999 & 993 \\
-0.45 & 22 & 30 & 2 & 12 & 997 & 986 \\
-0.60 & 67 & 45 & 13 & 10 & 982 & 987 \\
-0.75 & 399 & 344 & 77 & 19 & 913 & 979 \\
-0.90 & 1000 & 1000 & 733 & 954 & 255 & 42 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_coverage.tex}
 \caption{Coverage and truncation breakdown by ratio among 1000 total questions. Coverage counts per ratio: truncated (generator cut off), no verdict (truncated with no verifier ruling), decided (non-abstain verdict). Coverage is defined in \S\ref{sec:metrics}. ``trunc'' = traces cut off mid-output; ``no verdict'' = truncated traces the verifier did not rule on; ``decided'' = traces with a non-abstain verdict.}
 \label{tab:exp1_coverage}
 \end{table}
@@ -556,7 +508,7 @@ $R$ & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \texts
     \centering
     \includegraphics[width=\textwidth]{./data/experiments/budget_sweep/main/fig_sensitivity_leniency_dual.png}
 \end{subfigure}
-\caption{Figure 4.3 — \texttt{fig\_sensitivity\_leniency\_dual} (clean range only) — Dual-axis line. X: $R$ (0.30–0.75). Left Y: $d'$. Right Y: $c$. Both families. Visualises the co-movement of falling sensitivity and falling criterion — the "two effects, one driver" point.}
+\caption{ \texttt{fig\_sensitivity\_leniency\_dual} (clean range only) — Dual-axis line. X: $R$ (0.30–0.75). Left Y: $d'$. Right Y: $c$. Both families. Visualises the co-movement of falling sensitivity and falling criterion — the "two effects, one driver" point.}
 \end{figure}
 
 
@@ -666,21 +618,9 @@ new caps to restrict the Verifier. This precise numerical setup allows us to mea
 \begin{table}[H]
 \centering
 \label{tab:overview}
-\footnotesize % Slightly smaller font size
-\setlength{\tabcolsep}{2pt} % Redundant whitespace squeezed down (default is 6pt)
-\begin{tabular}{l*{13}{r}}
-\toprule
-$R$ & \multicolumn{1}{c}{gen acc} & \multicolumn{2}{c}{ver acc} & \multicolumn{2}{c}{FNR$_c$} & \multicolumn{2}{c}{FPR} & \multicolumn{2}{c}{EDR} & \multicolumn{2}{c}{$d'_c$} & \multicolumn{2}{c}{$c_c$} \\
-\cmidrule(lr){2-2} \cmidrule(lr){3-4} \cmidrule(lr){5-6} \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12} \cmidrule(lr){13-14}
- & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen} & \textsc{openai} \\
-\midrule
-0.30 & 0.30 & 0.50 & 0.71 & 0.07 & 0.03 & 0.47 & 0.13 & 0.53 & 0.88 & 1.60 & 2.94 & -0.69 & -0.31 \\
-0.45 & 0.30 & 0.65 & 0.86 & 0.08 & 0.04 & 0.42 & 0.11 & 0.58 & 0.89 & 1.62 & 2.95 & -0.58 & -0.23 \\
-0.60 & 0.29 & 0.67 & 0.89 & 0.09 & 0.04 & 0.41 & 0.10 & 0.59 & 0.90 & 1.57 & 2.99 & -0.53 & -0.22 \\
-0.75 & 0.29 & 0.66 & 0.90 & 0.09 & 0.05 & 0.42 & 0.10 & 0.58 & 0.90 & 1.59 & 2.94 & -0.56 & -0.18 \\
-0.90 & 0.29 & 0.68 & 0.89 & 0.09 & 0.05 & 0.40 & 0.11 & 0.60 & 0.89 & 1.61 & 2.90 & -0.53 & -0.20 \\
-\bottomrule
-\end{tabular}
+\footnotesize
+\setlength{\tabcolsep}{2pt}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_overview_body.tex}
 \caption{Experiment~2 overview. Per verifier-budget ratio and verifier family: corrected generator accuracy (after FN relabel), verifier accuracy, false-negative rate (FNR$_c$, corrected), false-positive rate (FPR, wrong answer accepted), error-detection rate (EDR), and sensitivity $d'_c$ and criterion $c_c$ (corrected, log-linear). Gen acc$_c$, ver acc, FNR$_c$, FPR, EDR from \S\ref{sec:metrics}; $d'_c$, $c_c$ from \S\ref{sec:sdt-computation}, all using the FN label correction defined in \S\ref{sec:fn-correction}. $d'_c$/FNR$_c$/$c_c$/gen acc use the false-negative label correction; $d'_c$ is an upper bound and $c_c$ a lower bound on leniency.}
 \end{table}
 
@@ -748,18 +688,7 @@ Since the overview showed that a larger budget barely changes overall accuracy, 
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lrr}
-\toprule
- & \multicolumn{2}{c}{FPR} \\
-\cmidrule(lr){2-3}
-attack & Qwen2.5-7B & gpt-4.1-mini \\
-\midrule
-arithmetic & 0.167 & 0.084 \\
-assumption & 0.300 & 0.201 \\
-mismatch & 0.688 & 0.004 \\
-persuasive & 0.359 & 0.255 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_fpr_body.tex}
 \caption{Mean false-positive rate (wrong answer accepted) by attack type, averaged over budget ratios. For each attack type $a$, $\text{FPR}_a = \operatorname{mean}_{R \in \mathcal{R}}\bigl(\text{FP}_a / (\text{FP}_a + \text{TN}_a)\bigr)$, where $\mathcal{R} = \{0.30, 0.45, 0.60, 0.75, 0.90\}$ and the per-ratio FPR follows from \S\ref{sec:metrics}. The mismatch column shows the cross-family dissociation: near-total for Qwen, near-zero for gpt-4.1-mini.}
 \end{table}
 
@@ -824,15 +753,7 @@ A natural expectation is that harder problems would be harder to verify, and tha
 
 \begin{table}[H]
 \centering
-\begin{tabular}{lrr}
-\toprule
-difficulty & Qwen2.5-7B & gpt-4.1-mini \\
-\midrule
-easy & 1.77 [1.49,1.95] & 3.10 [3.02,3.27] \\
-medium & 1.86 [1.75,2.05] & 3.30 [3.20,3.40] \\
-hard & 1.24 [1.14,1.29] & 2.57 [2.51,2.64] \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_dprime_body.tex}
 \caption{Mean corrected sensitivity $d'_c$ by problem difficulty (averaged over budget ratios), with range across ratios in brackets. $d'_c$ per difficulty tier from \S\ref{sec:sdt-computation} (with the FN label correction of \S\ref{sec:fn-correction}), averaged over budget ratios; the bracketed range gives $[\min_R d'_c,\, \max_R d'_c]$. Sensitivity is difficulty-gated and roughly budget-invariant within each level (the bracketed ranges are narrow).}
 \label{tab:dprime_difficulty}
 \end{table}
@@ -1224,24 +1145,7 @@ RULES:
 \begin{table}[p]
 \centering
 \footnotesize
-\begin{tabular}{lrrrrrrrrr}
-\toprule
-\multirow{2}{*}{$R$} &
-\multicolumn{2}{c}{gen acc} &
-\multicolumn{2}{c}{ver acc} &
-\multicolumn{2}{c}{$d'$} &
-\multicolumn{2}{c}{$c$} &
-\multirow{2}{*}{EDR} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
- & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & \\
-\midrule
-0.30 & 0.150 & 0.155 & 0.958 & 0.892 & 3.58 & 2.65 & $-$0.10 & $-$0.12 & 0.955 \\
-0.45 & 0.418 & 0.412 & 0.910 & 0.848 & 3.04 & 2.33 & $-$0.44 & $-$0.39 & 0.862 \\
-0.60 & 0.660 & 0.669 & 0.873 & 0.864 & 2.27 & 2.08 & $-$0.63 & $-$0.48 & 0.696 \\
-0.75 & 0.782 & 0.786 & 0.880 & 0.852 & 1.73 & 1.58 & $-$1.06 & $-$0.69 & 0.423 \\
-0.90 & 0.837 & 0.827 & 0.851 & 0.810 & 1.12 & 0.51 & $-$1.58 & $-$0.93 & 0.146 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_appx_overview.tex}
 \caption{Experiment~1 (symmetric sweep): per-ratio metrics for OpenAI
 (gpt-4.1-mini) and Qwen (Qwen2.5-7B-Instruct). Total budgets:
 easy=128, medium=192, hard=256 tokens.}
@@ -1251,24 +1155,7 @@ easy=128, medium=192, hard=256 tokens.}
 \begin{table}[p]
 \centering
 \footnotesize
-\begin{tabular}{lrrrrrrrrr}
-\toprule
-\multirow{2}{*}{$R$} &
-\multicolumn{2}{c}{trunc gen} &
-\multicolumn{2}{c}{reject} &
-\multicolumn{2}{c}{accept} &
-\multicolumn{2}{c}{no verdict} &
-\multirow{2}{*}{\% trunc} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
- & O & Q & O & Q & O & Q & O & Q & \\
-\midrule
-0.30 & 835 & 832 & 807 & 739 & 27 & 86 & 1 & 7 & 83.4 \\
-0.45 & 550 & 550 & 484 & 440 & 63 & 96 & 3 & 14 & 55.0 \\
-0.60 & 266 & 261 & 216 & 213 & 42 & 36 & 8 & 12 & 26.4 \\
-0.75 & 126 & 123 & 55 & 91 & 17 & 19 & 54 & 13 & 12.5 \\
-0.90 & 59 & 70 & 0 & 0 & 0 & 0 & 59 & 70 & 6.5 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_appx_truncation.tex}
 \caption{Experiment~1: generator truncation breakdown. ``trunc gen'' is the
 number of generator traces that were cut off mid-output; ``reject'' /
 ``accept'' / ``no verdict'' show how the verifier ruled on those stubs.}
@@ -1278,24 +1165,7 @@ number of generator traces that were cut off mid-output; ``reject'' /
 \begin{table}[p]
 \centering
 \footnotesize
-\begin{tabular}{lrrrrrrrrr}
-\toprule
-\multirow{2}{*}{$R$} &
-\multicolumn{2}{c}{POM} &
-\multicolumn{2}{c}{FPR} &
-\multicolumn{2}{c}{FNR} &
-\multicolumn{2}{c}{EDR (complete)} &
-\multirow{2}{*}{$N_{\text{decided}}$} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
- & O & Q & O & Q & O & Q & O & Q & \\
-\midrule
-0.30 & 0.446 & 0.343 & 0.045 & 0.115 & 0.027 & 0.071 & 0.955 & 0.887 & 999/993 \\
-0.45 & 0.373 & 0.201 & 0.138 & 0.220 & 0.024 & 0.058 & 0.858 & 0.775 & 997/986 \\
-0.60 & 0.208 & 0.082 & 0.304 & 0.288 & 0.038 & 0.063 & 0.661 & 0.691 & 982/987 \\
-0.75 & 0.108 & 0.039 & 0.577 & 0.460 & 0.026 & 0.069 & 0.204 & 0.392 & 913/979 \\
-0.90 & 0.059 & 0.055 & 0.854 & 0.800 & 0.014 & 0.108 & --- & --- & 255/42 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/budget_sweep/main/table_exp1_appx_extra.tex}
 \caption{Experiment~1: additional per-ratio metrics: process--outcome mismatch
 rate (POM, the proportion of traces where the stated answer disagrees with the
 reasoning), false-positive rate (FPR), false-negative rate (FNR), and
@@ -1316,30 +1186,7 @@ error-detection rate (EDR) on the complete-only subset.}
 \begin{table}[p]
 \centering
 \footnotesize
-\begin{tabular}{l*{14}{r}}
-\toprule
-$R$ & \multicolumn{2}{c}{gen acc} & \multicolumn{2}{c}{ver acc} &
-\multicolumn{2}{c}{FNR$_c$} & \multicolumn{2}{c}{FPR} &
-\multicolumn{2}{c}{EDR} & \multicolumn{2}{c}{$d'_c$} &
-\multicolumn{2}{c}{$c_c$} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-\cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
-\cmidrule(lr){14-15}
- & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI
- & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\
-\midrule
-0.30 & 0.296 & 0.299 & 0.507 & 0.711 & 0.066 & 0.036
- & 0.467 & 0.125 & 0.533 & 0.875 & 1.60 & 2.94 & $-$0.69 & $-$0.31 \\
-0.45 & 0.290 & 0.296 & 0.651 & 0.859 & 0.081 & 0.043
- & 0.419 & 0.109 & 0.581 & 0.891 & 1.62 & 2.95 & $-$0.58 & $-$0.23 \\
-0.60 & 0.290 & 0.294 & 0.667 & 0.894 & 0.094 & 0.041
- & 0.409 & 0.103 & 0.591 & 0.897 & 1.57 & 2.99 & $-$0.53 & $-$0.22 \\
-0.75 & 0.289 & 0.293 & 0.664 & 0.898 & 0.087 & 0.048
- & 0.420 & 0.102 & 0.580 & 0.898 & 1.59 & 2.94 & $-$0.56 & $-$0.18 \\
-0.90 & 0.289 & 0.291 & 0.675 & 0.893 & 0.090 & 0.048
- & 0.403 & 0.107 & 0.597 & 0.893 & 1.61 & 2.90 & $-$0.53 & $-$0.20 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_overview_app.tex}
 \caption{Experiment~2 overview. Per verifier-budget ratio and family:
 corrected generator accuracy, system accuracy, corrected FNR, FPR, EDR,
 corrected $d'$ and $c$ (Macmillan--Creelman log-linear). $d'_c$ is an upper
@@ -1351,30 +1198,7 @@ bound; $c_c$ is a lower bound on leniency (accept-side audit not applied).}
 \begin{table}[p]
 \centering
 \small
-\begin{tabular}{l*{14}{r}}
-\toprule
-$R$ & \multicolumn{2}{c}{$d'_o$} & \multicolumn{2}{c}{$d'_c$}
-& \multicolumn{2}{c}{$c_o$} & \multicolumn{2}{c}{$c_c$}
-& \multicolumn{2}{c}{FPR} & \multicolumn{2}{c}{FNR$_o$} &
-\multicolumn{2}{c}{FNR$_c$} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}
-\cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}
-\cmidrule(lr){14-15}
- & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI
- & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\
-\midrule
-0.30 & 1.26 & 2.57 & 1.60 & 2.94 & $-$0.55 & $-$0.14
- & $-$0.69 & $-$0.31 & 0.47 & 0.13 & 0.12 & 0.08 & 0.07 & 0.04 \\
-0.45 & 1.27 & 2.58 & 1.62 & 2.95 & $-$0.43 & $-$0.06
- & $-$0.58 & $-$0.23 & 0.42 & 0.11 & 0.14 & 0.09 & 0.08 & 0.04 \\
-0.60 & 1.25 & 2.58 & 1.57 & 2.99 & $-$0.40 & $-$0.03
- & $-$0.53 & $-$0.22 & 0.41 & 0.10 & 0.15 & 0.09 & 0.09 & 0.04 \\
-0.75 & 1.24 & 2.54 & 1.59 & 2.94 & $-$0.42 & $-$0.00
- & $-$0.56 & $-$0.18 & 0.42 & 0.10 & 0.15 & 0.10 & 0.09 & 0.05 \\
-0.90 & 1.27 & 2.48 & 1.61 & 2.90 & $-$0.39 & $-$0.00
- & $-$0.53 & $-$0.20 & 0.40 & 0.11 & 0.15 & 0.11 & 0.09 & 0.05 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_sdt_corrected.tex}
 \caption{Signal-detection metrics per ratio: original vs.\ corrected.
 $d'_c$/\allowbreak FNR$_c$/\allowbreak$c_c$ use the FN label correction;
 $d'_c$ is an upper bound, $c_c$ a lower bound on leniency.}
@@ -1383,16 +1207,7 @@ $d'_c$ is an upper bound, $c_c$ a lower bound on leniency.}
 
 \begin{table}[p]
 \centering
-\begin{tabular}{lrr}
-\toprule
-Attack & Qwen2.5-7B & gpt-4.1-mini \\
-\midrule
-arithmetic & 0.167 & 0.084 \\
-assumption & 0.300 & 0.201 \\
-mismatch   & 0.688 & 0.004 \\
-persuasive & 0.359 & 0.255 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_fpr_attack.tex}
 \caption{Mean false-positive rate (wrong accepted) by attack type,
 averaged over budget ratios. The mismatch dissociation is the key
 cross-family difference.}
@@ -1401,15 +1216,7 @@ cross-family difference.}
 
 \begin{table}[p]
 \centering
-\begin{tabular}{lrr}
-\toprule
-Difficulty & Qwen2.5-7B & gpt-4.1-mini \\
-\midrule
-easy   & 1.77 [1.49,1.95] & 3.10 [3.02,3.27] \\
-medium & 1.86 [1.75,2.05] & 3.30 [3.20,3.40] \\
-hard   & 1.24 [1.14,1.29] & 2.57 [2.51,2.64] \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_dprime_diff.tex}
 \caption{Mean $d'$ by problem difficulty (averaged over ratios), with
 range across ratios in brackets. Sensitivity drops with difficulty but
 is budget-invariant within each level.}
@@ -1418,18 +1225,7 @@ is budget-invariant within each level.}
 
 \begin{table}[p]
 \centering
-\begin{tabular}{l*{8}{r}}
-\toprule
- & \multicolumn{2}{c}{nominal FN}
- & \multicolumn{2}{c}{truncated}
- & \multicolumn{2}{c}{flaw}
- & \multicolumn{2}{c}{actual FN} \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}
- & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\
-\midrule
-total & 213 & 138 & 22 & 0 & 96 & 77 & 95 & 61 \\
-\bottomrule
-\end{tabular}
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_fn_correction.tex}
 \caption{Decomposition of nominal false negatives summed over ratios.
 Only the \emph{actual} column are genuine verifier errors; truncated
 verdicts and correctly-rejected flawed traces inflate the raw count.}

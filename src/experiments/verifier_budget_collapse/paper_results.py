@@ -289,6 +289,153 @@ def fig3_dprime_by_difficulty(fnc):
     save(fig, "fig3_dprime_by_difficulty")
 
 
+# --- Tabular-only exports for paper.tex \input ---
+
+def _extract_tabular(full_tex):
+    start = full_tex.find(r"\begin{tabular}")
+    end = full_tex.find(r"\end{tabular}")
+    if start == -1 or end == -1:
+        return full_tex
+    return full_tex[start:end + len(r"\end{tabular}")]
+
+
+def _tabular_overview_body(metrics, fnc):
+    q_rows = overview_rows(metrics["qwen"], fnc, "qwen")
+    o_rows = overview_rows(metrics["openai"], fnc, "openai")
+    lines = [
+        r"\begin{tabular}{l*{13}{r}}",
+        r"\toprule",
+        r"$R$ & \multicolumn{1}{c}{gen acc} & \multicolumn{2}{c}{ver acc} &"
+        r" \multicolumn{2}{c}{FNR$_c$} & \multicolumn{2}{c}{FPR} &"
+        r" \multicolumn{2}{c}{EDR} & \multicolumn{2}{c}{$d'_c$} &"
+        r" \multicolumn{2}{c}{$c_c$} \\",
+        r"\cmidrule(lr){2-2} \cmidrule(lr){3-4} \cmidrule(lr){5-6}"
+        r" \cmidrule(lr){7-8} \cmidrule(lr){9-10} \cmidrule(lr){11-12}"
+        r" \cmidrule(lr){13-14}",
+        r" & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen}"
+        r" & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen}"
+        r" & \textsc{openai} & \textsc{qwen} & \textsc{openai} & \textsc{qwen}"
+        r" & \textsc{openai} \\",
+        r"\midrule",
+    ]
+    for r_idx, r in enumerate(RATIOS):
+        q, o = q_rows[r_idx], o_rows[r_idx]
+        lines.append(
+            f"{r:.2f} & {o['gen_acc_corr']:.2f} & {q['ver_acc']:.2f} & {o['ver_acc']:.2f} & "
+            f"{q['fnr_c']:.2f} & {o['fnr_c']:.2f} & {q['fpr']:.2f} & {o['fpr']:.2f} & "
+            f"{q['edr']:.2f} & {o['edr']:.2f} & {q['dprime_c']:.2f} & {o['dprime_c']:.2f} & "
+            f"{q['crit_c']:.2f} & {o['crit_c']:.2f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
+def _tabular_fpr_body(metrics):
+    qa = attack_fpr_mean(metrics["qwen"])
+    oa = attack_fpr_mean(metrics["openai"])
+    lines = [
+        r"\begin{tabular}{lrr}", r"\toprule",
+        r" & \multicolumn{2}{c}{FPR} \\",
+        r"\cmidrule(lr){2-3}",
+        r"attack & " + " & ".join(FAM_LABEL[f] for f in ("qwen", "openai")) + r" \\",
+        r"\midrule",
+    ]
+    for a in ATTACKS:
+        lines.append(f"{a} & {qa[a]:.3f} & {oa[a]:.3f} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
+def _neg(val, decimals=2):
+    s = f"{val:.{decimals}f}"
+    if s.startswith("-"):
+        return r"$-$" + s[1:]
+    return s
+
+
+def _tabular_overview_app(metrics, fnc):
+    q_rows = overview_rows(metrics["qwen"], fnc, "qwen")
+    o_rows = overview_rows(metrics["openai"], fnc, "openai")
+    lines = [
+        r"\begin{tabular}{l*{14}{r}}", r"\toprule",
+        r"$R$ & \multicolumn{2}{c}{gen acc} & \multicolumn{2}{c}{ver acc} &"
+        r" \multicolumn{2}{c}{FNR$_c$} & \multicolumn{2}{c}{FPR} &"
+        r" \multicolumn{2}{c}{EDR} & \multicolumn{2}{c}{$d'_c$} &"
+        r" \multicolumn{2}{c}{$c_c$} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}"
+        r" \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}"
+        r" \cmidrule(lr){14-15}",
+        r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI"
+        r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\",
+        r"\midrule",
+    ]
+    for r_idx, r in enumerate(RATIOS):
+        q, o = q_rows[r_idx], o_rows[r_idx]
+        lines.append(
+            f"{r:.2f} & {q['gen_acc_corr']:.3f} & {o['gen_acc_corr']:.3f} & "
+            f"{q['ver_acc']:.3f} & {o['ver_acc']:.3f} & "
+            f"{q['fnr_c']:.3f} & {o['fnr_c']:.3f} & "
+            f"{q['fpr']:.3f} & {o['fpr']:.3f} & "
+            f"{q['edr']:.3f} & {o['edr']:.3f} & "
+            f"{_neg(q['dprime_c'], 2)} & {_neg(o['dprime_c'], 2)} & "
+            f"{_neg(q['crit_c'], 2)} & {_neg(o['crit_c'], 2)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
+def _tabular_sdt_app(fnc):
+    q_rows = fnc_rows(fnc, "qwen")
+    o_rows = fnc_rows(fnc, "openai")
+    lines = [
+        r"\begin{tabular}{l*{14}{r}}", r"\toprule",
+        r"$R$ & \multicolumn{2}{c}{$d'_o$} & \multicolumn{2}{c}{$d'_c$} &"
+        r" \multicolumn{2}{c}{$c_o$} & \multicolumn{2}{c}{$c_c$} &"
+        r" \multicolumn{2}{c}{FPR} & \multicolumn{2}{c}{FNR$_o$} &"
+        r" \multicolumn{2}{c}{FNR$_c$} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7}"
+        r" \cmidrule(lr){8-9} \cmidrule(lr){10-11} \cmidrule(lr){12-13}"
+        r" \cmidrule(lr){14-15}",
+        r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI"
+        r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\",
+        r"\midrule",
+    ]
+    for r_idx, r in enumerate(RATIOS):
+        qo, qc = q_rows[r_idx]["original"], q_rows[r_idx]["corrected"]
+        oo, oc = o_rows[r_idx]["original"], o_rows[r_idx]["corrected"]
+        lines.append(
+            f"{r:.2f} & {_neg(qo['d_prime'], 2)} & {_neg(oo['d_prime'], 2)} & "
+            f"{_neg(qc['d_prime'], 2)} & {_neg(oc['d_prime'], 2)} & "
+            f"{_neg(qo['criterion_c'], 2)} & {_neg(oo['criterion_c'], 2)} & "
+            f"{_neg(qc['criterion_c'], 2)} & {_neg(oc['criterion_c'], 2)} & "
+            f"{_neg(qo['fpr'], 2)} & {_neg(oo['fpr'], 2)} & "
+            f"{_neg(qo['fnr'], 2)} & {_neg(oo['fnr'], 2)} & "
+            f"{_neg(qc['fnr'], 2)} & {_neg(oc['fnr'], 2)} \\\\")
+    lines += [r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
+def _tabular_fn_app(fnc):
+    q_rows = fnc_rows(fnc, "qwen")
+    o_rows = fnc_rows(fnc, "openai")
+    q_nom = sum(r["metrics_fn"] for r in q_rows)
+    o_nom = sum(r["metrics_fn"] for r in o_rows)
+    q_tr  = sum(r["truncated_held_as_fn"] for r in q_rows)
+    o_tr  = sum(r["truncated_held_as_fn"] for r in o_rows)
+    q_fl  = sum(r["flaw_moved_fn_to_tn"] for r in q_rows)
+    o_fl  = sum(r["flaw_moved_fn_to_tn"] for r in o_rows)
+    q_ac  = sum(r["actual_false_negative"] for r in q_rows)
+    o_ac  = sum(r["actual_false_negative"] for r in o_rows)
+    lines = [
+        r"\begin{tabular}{l*{8}{r}}", r"\toprule",
+        r" & \multicolumn{2}{c}{nominal FN} & \multicolumn{2}{c}{truncated}"
+        r" & \multicolumn{2}{c}{flaw} & \multicolumn{2}{c}{actual FN} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-7} \cmidrule(lr){8-9}",
+        r" & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI & Qwen & OpenAI \\",
+        r"\midrule",
+        f"total & {q_nom} & {o_nom} & {q_tr} & {o_tr} & {q_fl} & {o_fl} & {q_ac} & {o_ac} \\\\",
+        r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     metrics, fnc = load()
@@ -305,6 +452,23 @@ def main():
         (OUT_DIR / name).write_text(body + "\n", encoding="utf-8")
     (OUT_DIR / "all_tables.tex").write_text(
         "\n\n".join(r"\input{%s}" % n.replace(".tex", "") for n in tables) + "\n", encoding="utf-8")
+
+    # Tabular-only exports for \input from paper.tex (body + appendix)
+    tabulars = {
+        # Body tables
+        "table_exp2_overview_body.tex": _tabular_overview_body(metrics, fnc),
+        "table_exp2_fpr_body.tex": _tabular_fpr_body(metrics),
+        "table_exp2_dprime_body.tex": _extract_tabular(tex_table3(fnc)),
+        # Appendix tables
+        "table_exp2_overview_app.tex": _tabular_overview_app(metrics, fnc),
+        "table_exp2_sdt_corrected.tex": _tabular_sdt_app(fnc),
+        "table_exp2_fpr_attack.tex": _extract_tabular(tex_table2(metrics)).replace("attack", "Attack", 1),
+        "table_exp2_dprime_diff.tex": _extract_tabular(tex_table3(fnc)).replace("difficulty", "Difficulty", 1),
+        "table_exp2_fn_correction.tex": _tabular_fn_app(fnc),
+    }
+    for name, body in tabulars.items():
+        (OUT_DIR / name).write_text(body, encoding="utf-8")
+    print(f"Wrote {len(tabulars)} tabular-only files to {OUT_DIR}")
 
     fig1_dprime_criterion(fnc)
     fig2_fpr_by_attack(metrics)

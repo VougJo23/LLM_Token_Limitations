@@ -10,12 +10,10 @@ import pandas as pd
 from pathlib import Path
 
 def load_files(files):
-    # Change: Store as a list of dicts with a 'model' label
     combined_data = []
     
     for file_path in files:
         path = Path(file_path)
-        # Infer model name from path (e.g., ".../openai/..." -> "openai")
         model_name = "openai" if "openai" in str(path).lower() else "qwen"
         
         with open(path, "r") as f:
@@ -251,7 +249,6 @@ def plot_criterion_by_difficulty(merged_data, out_dir):
 
 def main():
     parser = argparse.ArgumentParser()
-    # Accept a list of specific files
     parser.add_argument("--files", nargs='+', required=True, help="List of specific master_report files")
     parser.add_argument("--out", default="paper_artifacts", help="Output directory")
     args = parser.parse_args()
@@ -267,7 +264,7 @@ def main():
     df = flatten_for_export(merged_data)
 
     value_columns = [
-        'gen_acc', 'ver_acc', #'sys_acc', 
+        'gen_acc', 'ver_acc',
         'fnr', 'fpr', 'process_outcome_mismatch_rate', 'edr', 
         'd_prime', 'c_score', 'c_lower', 'c_upper', 
         'mean_gen_len', 'n_valid', 'n_trunc', 'n_no_verdict', 'n_decided',
@@ -285,7 +282,7 @@ def main():
         "d_prime_openai", "d_prime_qwen"
     ]].to_csv(out_dir / "plot_criterion_leniency.csv", index=False)
     
-    # Leniency Overview (LaTeX)
+    # Leniency Overview 
     df_wide[[
         "ratio", 
         "fnr_openai", "fnr_qwen",
@@ -296,7 +293,7 @@ def main():
         "c_score_openai", "c_score_qwen"
     ]].to_latex(out_dir / "table_leniency_overview.tex", index=False, float_format="%.3f")
     
-    # Starvation Floor (LaTeX)
+    # Starvation Floor
     df_wide[[
         "ratio", 
         "n_valid_openai", "n_valid_qwen", 
@@ -305,7 +302,7 @@ def main():
         "n_decided_openai", "n_decided_qwen"
     ]].to_latex(out_dir / "table_starvation_floor.tex", index=False)
     
-    # Confound Tracking (LaTeX)
+    # Confound Tracking
     df_wide[[
         "ratio", 
         "gen_acc_openai", "gen_acc_qwen", 
@@ -314,7 +311,7 @@ def main():
         "mean_gen_len_openai", "mean_gen_len_qwen"
     ]].to_latex(out_dir / "table_confound_tracking.tex", index=False, float_format="%.2f")
     
-    # Generator Truncation Breakdown (LaTeX)
+    # Generator Truncation Breakdown
     df_wide[[
         "ratio",
         "gen_trunc_total_openai", "gen_trunc_total_qwen",

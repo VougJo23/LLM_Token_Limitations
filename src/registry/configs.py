@@ -27,21 +27,21 @@ CONFIGS = {
 
 CONFIGS2 = {
     "easy": {
-        "total_max_tokens": 128,
+        "total_max_tokens": 500,
         "verifier_ratios": [0.9, 0.75, 0.6, 0.45],
-        "verifier_min_tokens": 40
+        "verifier_min_tokens": 10
     },
 
     "medium": {
-        "total_max_tokens": 192,
+        "total_max_tokens": 700,
         "verifier_ratios": [0.9, 0.75, 0.6, 0.45],
-        "verifier_min_tokens": 50
+        "verifier_min_tokens": 12
     },
 
     "hard": {
-        "total_max_tokens": 256,
+        "total_max_tokens": 900,
         "verifier_ratios": [0.9, 0.75, 0.6, 0.45],
-        "verifier_min_tokens": 50
+        "verifier_min_tokens": 15
     },
 }
 
@@ -67,6 +67,20 @@ CONFIGS_UNLIMITED = {
 }
 
 
+CONFIGS_VERIFIER_OVERTHINKING = {
+
+    "easy": {
+        "verifier_max_token_sweep": [256, 512, 1024, 2048, 4096, 8192],
+    },
+    
+    "medium": {
+        "verifier_max_token_sweep": [256, 512, 1024, 2048, 4096, 8192],
+    },
+    
+    "hard": {
+        "verifier_max_token_sweep": [256, 512, 1024, 2048, 4096, 8192],
+    }
+}
 
 # PILOT_CONFIGS = {
     

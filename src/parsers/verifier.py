@@ -1,6 +1,6 @@
 import re
 
-_VERDICT_LINE_RE = re.compile(r"\b(INCORRECT|CORRECT)\b", re.IGNORECASE)
+#_VERDICT_LINE_RE = re.compile(r"\b(INCORRECT|CORRECT)\b", re.IGNORECASE)
 
 
 def parse_verifier(output: str):

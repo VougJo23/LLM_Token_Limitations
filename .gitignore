@@ -5,3 +5,25 @@ __pycache__/
 # OS/editor
 .DS_Store
 .vscode/
+
+# --- LaTeX Auxiliary Files ---
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.synctex.gz
+*.bbl
+*.blg
+*.toc
+*.out
+*.lof
+*.lot
+*.xdv
+paper.bbl-SAVE-ERROR
+
+# --- Operating System Files ---
+.DS_Store
+Thumbs.db
+
+# Rest
+*.sh

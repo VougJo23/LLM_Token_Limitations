@@ -147,11 +147,10 @@ def calculate_metrics(valid, decided, rng):
     trunc_no_verdict = sum(1 for r in valid if r.get("verifier_truncated") and r.get("step_judgments") and r.get("verifier_decision") is None)
     trunc_reason = sum(1 for r in valid if r.get("verifier_truncated") and r.get("step_judgments") and r.get("verifier_decision") is not None)
 
-    # Process-outcome mismatch & answer-missing rates
     mismatch_count = 0
     answer_missing_count = 0
     for r in valid:
-        n_invalid = r.get("n_invalid", r.get("n_invalid_steps", 0))  # run_pilot writes "n_invalid"
+        n_invalid = r.get("n_invalid", r.get("n_invalid_steps", 0))
         all_steps_valid = r.get("total_steps", 0) > 0 and n_invalid == 0
         answer_missing = r.get("truncated") or not r.get("predicted_answer")
         if answer_missing:
@@ -159,7 +158,6 @@ def calculate_metrics(valid, decided, rng):
         if all_steps_valid and answer_missing:
             mismatch_count += 1
 
-    # Generator truncation breakdown by verifier outcome
     gen_truncated = [r for r in valid if r.get("truncated")]
     n_gen_trunc = len(gen_truncated)
     gen_trunc_reject = sum(1 for r in gen_truncated if r.get("verifier_decision") is False)
@@ -170,12 +168,12 @@ def calculate_metrics(valid, decided, rng):
         "data_quality": {"n_valid": len(valid), "n_decided": len(decided)},
         "performance": {
             "generator_accuracy": gen_acc,
-            "system_accuracy_valid": global_sys_acc,        # (tp+tn)/n_valid; abstentions penalized
-            "system_accuracy_decided": cond_ver_acc,        # (tp+tn)/n_decided; conditional on a verdict
+            "system_accuracy_valid": global_sys_acc,
+            "system_accuracy_decided": cond_ver_acc,
             "error_detection_rate": correct_rejections / fpr_denom if fpr_denom else 0.0,
             "false_positive_rate": lazy_accepts / fpr_denom if fpr_denom else 0.0,
             "false_negative_rate": false_rejects / fnr_denom if fnr_denom else 0.0,
-            # backward-compatible aliases (identical numbers; keeps existing plot code working):
+
             "global_system_accuracy": global_sys_acc,
             "conditional_verifier_accuracy": cond_ver_acc,
         },
@@ -248,7 +246,7 @@ def plot_metric(data, x_key, y_func, title, ylabel, out_path, ci_func=None):
     plt.figure(figsize=(7, 5))
     plt.plot(xs, ys, marker="o", linewidth=1.6)
     
-    # Add shaded CI region
+
     if ci_func and len(y_err_low) == len(xs):
         plt.fill_between(xs, y_err_low, y_err_high, alpha=0.2, color="C0", label="95% CI")
         plt.legend()
@@ -271,7 +269,6 @@ def main():
     out_dir = Path(args.output_dir) if args.output_dir else input_dir / "analysis"   
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    # Initialize RNG for rigorous reproducible bootstrapping
     rng = np.random.default_rng(42)
 
     summary_aurocs = {}

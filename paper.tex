@@ -690,18 +690,39 @@ Since the overview showed that a larger budget barely changes overall accuracy, 
 \centering
 \input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_fpr_body.tex}
 \caption{Mean false-positive rate (wrong answer accepted) by attack type, averaged over budget ratios. For each attack type $a$, $\text{FPR}_a = \operatorname{mean}_{R \in \mathcal{R}}\bigl(\text{FP}_a / (\text{FP}_a + \text{TN}_a)\bigr)$, where $\mathcal{R} = \{0.30, 0.45, 0.60, 0.75, 0.90\}$ and the per-ratio FPR follows from \S\ref{sec:metrics}. The mismatch column shows the cross-family dissociation: near-total for Qwen, near-zero for gpt-4.1-mini.}
+\label{tab:fpr_body}
+\end{table}
+
+\begin{table}[H]
+\centering
+\footnotesize
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_reason_body.tex}
+\caption{Accepted wrong answers for the mismatch attack, by whether the verifier performed a final-answer cross-check (indicated by the presence of a ``Reason:'' line, per the prompt's format rule). When the verifier checks, both families catch the mismatch perfectly; when it does not, both accept everything. Decided traces only.}
+\label{tab:reason_breakdown}
 \end{table}
 
 The clearest split is the mismatch attack, where the generator writes correct step-by-step
  working but reports a wrong final answer. Qwen accepts these almost 69\% of the time,
-  while gpt-4.1-mini is practically immune (FPR below 1\%). The likely reason is that Qwen
+  while gpt-4.1-mini is practically immune (FPR below 1\%). The reason is that Qwen
    audits the early steps, sees that they are valid, and then trusts the final answer
     without checking it against the work it just verified — an anchoring or process-over-outcome
      effect. The frontier model performs that final comparison and so is not fooled.
-      This is a family-specific blind spot, and it holds at every budget, so more compute
-       does not close it.
+       This is a family-specific blind spot, and it holds at every budget, so more compute
+        does not close it.
 
-       Both families, however, are vulnerable to persuasive attacks, where faulty maths is wrapped
+        The mechanism behind this blind spot is visible in Table~\ref{tab:reason_breakdown}. The
+        verifier prompt requires a ``Reason:'' line only when the verdict is INCORRECT, so its
+        presence or absence serves as a machine-readable trace of whether the verifier performed
+        the critical final-answer cross-check. When the verifier does check (``Reason:'' present),
+        both families catch the mismatch perfectly --- Qwen accepted 0 of 376 checked cases,
+        gpt-4.1-mini 0 of 1211. When it does not check (``Reason:'' absent), both accept every
+        wrong answer --- 825 of 825 for Qwen, 5 of 5 for gpt-4.1-mini. The entire 69\% vs.\ 0.4\%
+        gap in the mismatch column of Table~\ref{tab:fpr_body} is therefore a difference in how
+        often the verifier chooses to perform the cross-check: Qwen skips it 69\% of the time
+        (825 of 1201 mismatch traces), while gpt-4.1-mini skips it only 0.4\% (5 of 1216).
+        Detection ability, conditional on checking, is identical.
+
+        Both families, however, are vulnerable to persuasive attacks, where faulty maths is wrapped
  in confident, formal, academic-sounding language: the FPR rises to about 36\% for Qwen
   and 25.5\% for gpt-4.1-mini. This shared weakness suggests that the verifiers behave, at 
   least in part, like language predictors rather than pure logic checkers — when a trace
@@ -877,7 +898,7 @@ The larger boundary is the benchmark. GSM8K was chosen as a control: because the
   which is what isolates the budget mechanism cleanly. A harder benchmark would confound 
   ``lenient because starved'' with ``could not solve it anyway.'' The design therefore establishes
    the direction of the effects, not their magnitude on harder material --- and the difficulty-gating
-    result, where Hard sensitivity drops sharply, is itself a sign that more demanding problems may behave
+    result, where Hard sensitivity drops sharply, is itself a sign  that more demanding problems may behave
      differently. Whether the leniency trend and the mismatch blind spot survive on non-saturated and non-mathematical 
      reasoning is the central open question.
 
@@ -1212,6 +1233,18 @@ $d'_c$ is an upper bound, $c_c$ a lower bound on leniency.}
 averaged over budget ratios. The mismatch dissociation is the key
 cross-family difference.}
 \label{tab:fpr_attack}
+\end{table}
+
+\begin{table}[p]
+\centering
+\footnotesize
+\input{data/experiments/verifier_budget_collapse/main/paper_results/table_exp2_reason_body.tex}
+\caption{Mismatch attack: accepted wrong answers by whether the verifier
+performed a final-answer cross-check, corresponding to Table~\ref{tab:reason_breakdown}
+in the body. When the verifier checks (designated by a ``Reason:'' line,
+per the prompt's format rule), both families catch the mismatch perfectly;
+when it does not, both accept everything. Decided traces only.}
+\label{tab:reason_breakdown_app}
 \end{table}
 
 \begin{table}[p]

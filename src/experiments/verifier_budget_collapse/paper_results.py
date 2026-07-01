@@ -436,9 +436,55 @@ def _tabular_fn_app(fnc):
     return "\n".join(lines) + "\n"
 
 
+# --- Reason breakdown (raw JSONL analysis) ---
+
+RAW_DIRS = {"qwen": BASE_DIR / "qwen", "openai": BASE_DIR / "openai"}
+
+def load_raw_data():
+    raw = {}
+    for fam, d in RAW_DIRS.items():
+        rows = []
+        for ratio in ["30", "45", "60", "75", "90"]:
+            path = d / f"gsm8k_vr{ratio}.jsonl"
+            with open(path, encoding="utf-8-sig") as f:
+                rows.extend([json.loads(line) for line in f])
+        raw[fam] = rows
+    return raw
+
+def compute_reason_stats(raw):
+    stats = {}
+    for fam in ("qwen", "openai"):
+        decided = [r for r in raw[fam]
+                   if r.get("verifier_decision") is not None
+                   and r.get("actual_correctness") == False
+                   and r.get("attack_type") == "mismatch"]
+        reason = sum(1 for r in decided if "Reason:" in (r.get("verifier_raw_output") or ""))
+        noreason = len(decided) - reason
+        ra = sum(1 for r in decided if "Reason:" in (r.get("verifier_raw_output") or "") and r.get("verifier_decision") == True)
+        na = sum(1 for r in decided if "Reason:" not in (r.get("verifier_raw_output") or "") and r.get("verifier_decision") == True)
+        stats[fam] = {"reason": reason, "reason_accept": ra, "noreason": noreason, "noreason_accept": na}
+    return stats
+
+def _tabular_reason_body(stats):
+    q, o = stats["qwen"], stats["openai"]
+    lines = [
+        r"\begin{tabular}{lrrrr}",
+        r"\toprule",
+        r" & \multicolumn{2}{c}{Checked (has Reason)} & \multicolumn{2}{c}{Skipped check (no Reason)} \\",
+        r"\cmidrule(lr){2-3} \cmidrule(lr){4-5}",
+        r"Verifier & Total & Accepted & Total & Accepted \\",
+        r"\midrule",
+        f"Qwen2.5-7B & {q['reason']} & {q['reason_accept']} & {q['noreason']} & {q['noreason_accept']} \\\\",
+        f"gpt-4.1-mini & {o['reason']} & {o['reason_accept']} & {o['noreason']} & {o['noreason_accept']} \\\\",
+        r"\bottomrule", r"\end{tabular}"]
+    return "\n".join(lines) + "\n"
+
+
 def main():
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     metrics, fnc = load()
+    raw = load_raw_data()
+    reason_stats = compute_reason_stats(raw)
     setup_style()
 
     tables = {
@@ -459,6 +505,7 @@ def main():
         "table_exp2_overview_body.tex": _tabular_overview_body(metrics, fnc),
         "table_exp2_fpr_body.tex": _tabular_fpr_body(metrics),
         "table_exp2_dprime_body.tex": _extract_tabular(tex_table3(fnc)),
+        "table_exp2_reason_body.tex": _tabular_reason_body(reason_stats),
         # Appendix tables
         "table_exp2_overview_app.tex": _tabular_overview_app(metrics, fnc),
         "table_exp2_sdt_corrected.tex": _tabular_sdt_app(fnc),
